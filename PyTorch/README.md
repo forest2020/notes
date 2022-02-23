@@ -1,6 +1,11 @@
 PyTorch学习笔记
+========
 * [安装](#安装)
+* [PyTorch数据类型](#PyTorch数据类型)
+ * [数据类型说明](#数据类型说明)
+ * [标量](#标量)
 * [Visdom可视化](#Visdom可视化)
+
 
 # 安装
 1. 安装Anaconda
@@ -8,6 +13,61 @@ PyTorch学习笔记
 3. 进入Pytorch安装页面，可能是[这个](https://pytorch.org/get-started/locally/)
 4. 在“START LOCALLY”标签页里面，根据自己电脑的操作系统和GPU情况，选择好安装条件，复制“Run this Command:”后面的内容
 5. 打开Anacoda命令提示符窗口，默认是base虚拟环境（可以创建新的，激活需要的环境），运行上一步复制的命令，完成PyTorch安装
+
+# PyTorch数据类型
+## 数据类型说明
+PyTorch中存储数据的容器叫做张量（Tensor），支持整数和浮点数，不支持字符串，与Python中数据类型对应关系为：
+| Python | PyTorch |
+| ---- | ---- |
+| int | IntTensor of size() |
+| float | FloatTensor of size() |
+| int array | IntTensor of size [d1,d2,...] |
+| float array | FloatTensor of size [d1,d2,...] |
+| string | -- |
+
+PyTorch中的张量可以在CPU中也可以在GPU中，使用to device完成。
+PyTorch是一个数值计算库，不是完备的编程语言库，因此不需要支持字符串操作，如果需要字符串，可以用编码表示。
+
+## 标量
+维度是0的张量，声名方法：
+```python
+import torch
+
+a = torch.tensor(1)
+b = torch.tensor(2.)
+print(a, a.type(), a.shape)
+print(b, b.type(), b.shape)
+```
+输出：
+```
+tensor(1) torch.LongTensor torch.Size([])
+tensor(2.) torch.FloatTensor torch.Size([])
+```
+
+
+创建一个2行3列的符合正态分布的随机2维数组：
+```python
+import torch
+
+a = torch.randn(2, 3)
+print(a)
+print(a.type())
+print(type(a))
+print(isinstance(a, torch.FloatTensor))
+print(isinstance(a, torch.cuda.FloatTensor))
+print(isinstance(a, torch.DoubleTensor))```
+输出：
+```
+tensor([[-0.1773, -0.4824, -0.1379],
+        [ 1.9032, -0.7637, -0.0132]])
+torch.FloatTensor
+<class 'torch.Tensor'>
+True
+False
+False```
+使用```x = x.cuda()```将CPU中的Tensor转入GPU中，前期需要安装支持CUDA的PyTorch。
+
+
 
 # Visdom可视化
 安装：pip install visdom
