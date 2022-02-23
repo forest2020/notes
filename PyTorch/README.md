@@ -1,6 +1,7 @@
 PyTorch学习笔记
 ========
 * [安装](#安装)
+* [IDE](#IDE)
 * [PyTorch数据类型](#PyTorch数据类型)
   * [数据类型说明](#数据类型说明)
   * [标量](#标量)
@@ -15,6 +16,13 @@ PyTorch学习笔记
 3. 进入Pytorch安装页面，可能是[这个](https://pytorch.org/get-started/locally/)
 4. 在“START LOCALLY”标签页里面，根据自己电脑的操作系统和GPU情况，选择好安装条件，复制“Run this Command:”后面的内容
 5. 打开Anacoda命令提示符窗口，默认是base虚拟环境（可以创建新的，激活需要的环境），运行上一步复制的命令，完成PyTorch安装
+
+# IDE
+* Spyder，Anaconda自带的IDE，启动速度比较满，支持调试，智能提示不好用。
+* VSCode，速度快，智能提示好用。
+在Anaconda虚拟环境下使用VSCode方法：打开Anaconda命令提示符窗口，zixing```code.exe```启动VSCode，需要python插件，在插件的设置中指定Anacoda安装路径。
+
+
 
 # PyTorch数据类型
 ## 数据类型说明
