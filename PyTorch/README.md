@@ -10,6 +10,9 @@ PyTorch学习笔记
 * [索引与切片](#索引与切片)
 * [维度变换](#维度变换)
 * [广播](#广播)
+* [拼接与分割](#拼接与分割)
+* [数学运算](#数学运算)
+* [统计](#统计)
 * [Visdom可视化](#Visdom可视化)
 
 
@@ -341,6 +344,189 @@ a.transpose(0,1): torch.Size([3, 8, 280, 280])
 ```
 
 # 广播
+```python
+import torch
+
+a = torch.tensor([[1, 2], [3, 4], [5, 6]])
+print('a shape:', a.shape)
+print('a data:', a)
+
+b = torch.tensor([3])
+print('b shape:', b.shape)
+print('b data:', b)
+
+# 广播是从最小维度匹配
+# 计算a+b时，b通过广播扩展为（3,2)维度，每个元素都是3
+print('a+b:', a+b)
+
+# 匹配最后一个维度，长度必须等于a最后一个维度的长度，每个元素分别操作
+c = torch.tensor([2, 1])
+print('a+c:', a+c)
+
+# a的维度是[4,32,28,30],b的维度是[1,32,1,1]
+# a+b也是可以广播的，32不变，第一个1变为4，第二个1变为28，第三个1变为30
+# a+b得到的维度是[4,32,28,30]
+```
+输出：
+```
+a shape: torch.Size([3, 2])
+a data: tensor([[1, 2],
+        [3, 4],
+        [5, 6]])
+b shape: torch.Size([1])
+b data: tensor([3])
+a+b: tensor([[4, 5],
+        [6, 7],
+        [8, 9]])
+a+c: tensor([[3, 3],
+        [5, 5],
+        [7, 7]])
+```
+
+# 拼接与分割
+| 操作 | 说明 |
+| --- | --- |
+| cat | 连接多个向量的某一维度，其它维度必须一样 |
+| stack | 叠加多个向量的某一维度，被叠加向量的所有维度必须一样，得到叠加向量在指定叠加维度前面增加了一个维度，长度等于被叠加向量的个数 |
+| split | 在指定维度上拆分，指定返回的每个向量拆分维度的长度，返回一个元组，维度不变 |
+| chunk | 指定返回向量拆分维度的长度进行拆分，返回一个元组，数量根据每个的数量计算，最后一个小于等于指定长度 |
+
+```python
+import torch
+
+# cat,从指定的维度上连接，不指定默认为0维度
+# 在默认0维度上链接，其它维度必须一致
+a = torch.rand(5, 12, 7)
+b = torch.rand(10, 12, 7)
+c = torch.cat([a, b])
+print('a b cat at dim 0 shape:', c.shape)
+
+# 在1维度上连接
+a = torch.rand(5, 12, 7)
+b = torch.rand(5, 2, 7)
+c = torch.cat([a, b], dim=1)
+print('a b cat at dim 1 shape:', c.shape)
+
+# stack，相加的维度前面增加一个新的维度
+# 叠加的向量维度必须一样
+a = torch.rand(5, 8, 7)
+b = torch.rand(5, 8, 7)
+c = torch.rand(5, 8, 7)
+d = torch.stack([a, b, c], dim=1)
+print('a b c stack at dim 1 shape:', d.shape)
+
+# split，指定长度拆分
+a = torch.rand(5, 3, 2)
+b, c = a.split([2, 3])
+print('b shape:', b.shape)
+print('c shape:', c.shape)
+
+# chunk，指定个数拆分
+d = a.chunk(3)
+print('d len:', len(d))
+print('d[0] shape:', d[0].shape)
+print('d[1] shape:', d[1].shape)
+print('d[2] shape:', d[2].shape)
+```
+输出：
+```
+a b cat at dim 0 shape: torch.Size([15, 12, 7])
+a b cat at dim 1 shape: torch.Size([5, 14, 7])
+a b c stack at dim 1 shape: torch.Size([5, 3, 8, 7])
+b shape: torch.Size([2, 3, 2])
+c shape: torch.Size([3, 3, 2])
+d len: 3
+d[0] shape: torch.Size([2, 3, 2])
+d[1] shape: torch.Size([2, 3, 2])
+d[2] shape: torch.Size([1, 3, 2])
+```
+
+# 数学运算
+标量预算没有特别之处，主要需要了解是向量的运算
+```python
+import torch
+
+# +、-、*、/，对应元素加、减、乘、除，支持广播
+a = torch.rand(3, 4)
+print('a shape:', a.shape)
+b = torch.rand(4)
+print('b shape:', b.shape)
+print('a+b shape:', (a+b).shape)
+
+# 矩阵乘法，mm只支持2维矩阵乘法，@/matmul支持多维矩阵
+# 多维矩阵乘法对最后2个维度做矩阵乘法，前面的维度支持广播，一一对应
+a = torch.rand(4, 3, 28, 64)
+print('a shape:', a.shape)
+b = torch.rand(4, 1, 64, 28)
+print('b shape:', b.shape)
+print('a@b shape:', (a@b).shape)
+
+# **n/pow(n) n次方，sqrt开方，rsqrt平凡跟倒数
+a = torch.tensor([[2, 3], [4, 5]])
+print('a:', a)
+print('a的平方：', a**2)
+print('a的3次方：', a.pow(3))
+print('a的平方根：', a.sqrt())
+print('a的平方根倒数：', a.rsqrt())
+
+# log,对数，e为底的对数，其它低速的函数：log10,log2
+print('[e,e]的log:', torch.tensor([2.7183, 2.7183]).log())
+
+# floor向下取整,ceil向上取整,trunc取整数部分,frac取小数部分,round四舍五入
+a = torch.tensor(3.14)
+print('a: ', a)
+print('floor       ceil        trunc         frac')
+print(a.floor(), a.ceil(), a.trunc(), a.frac())
+
+# clamp，裁剪，限制数据的范围
+a = torch.tensor([[1, 2, 3], [4, 5, 6]])
+print('a:', a)
+print('a.clamp(4):', a.clamp(4))
+print('a.clamp(3,5):', a.clamp(3, 5))
+```
+输出：
+```
+a shape: torch.Size([3, 4])
+b shape: torch.Size([4])
+a+b shape: torch.Size([3, 4])
+a shape: torch.Size([4, 3, 28, 64])
+b shape: torch.Size([4, 1, 64, 28])
+a@b shape: torch.Size([4, 3, 28, 28])
+a: tensor([[2, 3],
+        [4, 5]])
+a的平方： tensor([[ 4,  9],
+        [16, 25]])
+a的3次方： tensor([[  8,  27],
+        [ 64, 125]])
+a的平方根： tensor([[1.4142, 1.7321],
+        [2.0000, 2.2361]])
+a的平方根倒数： tensor([[0.7071, 0.5774],
+        [0.5000, 0.4472]])
+[e,e]的log: tensor([1.0000, 1.0000])
+a:  tensor(3.1400)
+floor       ceil        trunc         frac
+tensor(3.) tensor(4.) tensor(3.) tensor(0.1400)
+a: tensor([[1, 2, 3],
+        [4, 5, 6]])
+a.clamp(4): tensor([[4, 4, 4],
+        [4, 5, 6]])
+a.clamp(3,5): tensor([[3, 3, 3],
+        [4, 5, 5]])
+```
+
+
+# 统计
+| 操作 | 说明 |
+| --- | --- |
+| norm | 求二范数 |
+| mean | 求均值 |
+| sum | 求和 |
+| prod | 累乘 |
+| max、min、argmax、argmin | 最大、最小值，最大、最小值的索引 |
+| kthvalue、topk | 第几个的值、前几个的值 |
+
+
+
 
 
 
