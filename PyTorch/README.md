@@ -1,3 +1,7 @@
+PyTorch学习笔记
+* 安装[#安装]
+* Visdom可视化[#Visdom可视化]
+
 # 安装
 1. 安装Anaconda
 2. 打开PyTorch[官网](https://pytorch.org/)
