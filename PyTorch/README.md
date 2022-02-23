@@ -20,6 +20,7 @@ PyTorch学习笔记
 # IDE
 * Spyder，Anaconda自带的IDE，启动速度比较满，支持调试，智能提示不好用。
 * VSCode，速度快，智能提示好用。
+
 在Anaconda虚拟环境下使用VSCode方法：打开Anaconda命令提示符窗口，zixing```code.exe```启动VSCode，需要python插件，在插件的设置中指定Anacoda安装路径。
 
 
