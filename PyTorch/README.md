@@ -13,6 +13,7 @@ PyTorch学习笔记
 * [拼接与分割](#拼接与分割)
 * [数学运算](#数学运算)
 * [统计](#统计)
+* [比较运算](#比较运算)
 * [Visdom可视化](#Visdom可视化)
 
 
@@ -525,9 +526,124 @@ a.clamp(3,5): tensor([[3, 3, 3],
 | max、min、argmax、argmin | 最大、最小值，最大、最小值的索引 |
 | kthvalue、topk | 第几个的值、前几个的值 |
 
+```python
 
+import torch
 
+a = torch.full([8], 1.)
+b = a.view(2, 4)
+c = a.view(2, 2, 2)
+print('a:', a, a.shape)
+print('b:', b, b.shape)
+print('c:', c, c.shape)
 
+# norm
+# 1范数，所有元素的和
+print('a.norm(1):', a.norm(1))
+print('b.norm(1):', b.norm(1))
+print('c.norm(1):', c.norm(1))
+# 2范数，所有元素的平方和再开方
+print('a.norm(2):', a.norm(2))
+print('b.norm(2):', b.norm(2))
+print('c.norm(2):', c.norm(2))
+# 指定维度的范数,维度的理解不太清楚，大约是取那个维度就消掉那个维度
+print('b.norm(1,dim=1):', b.norm(1, dim=1))
+print('c.norm(1,dim=1):', c.norm(1, dim=1))
+print('c.norm(1,dim=0):', c.norm(1, dim=0))
+
+# mean、sum、max、min、prod，argmax、argmin
+a = torch.arange(1, 9).view(2, 4).float()
+print('a:', a)
+print('a.mean():', a.mean())
+print('a.sum():', a.sum())
+print('a.max():', a.max())
+print('a.min():', a.min())
+print('a.prod(),累乘:', a.prod())
+print('a.argmax():', a.argmax())
+print('a.argmin(1):', a.argmin(1))
+print('a.argmin(1,keepdim=True):', a.argmin(1, keepdim=True))
+print('a.topk(2),largest=Flase返回最小的k个:', a.topk(2))
+print('a.kthvalue(2),第k小的:', a.kthvalue(2))
+```
+输出：
+```
+a: tensor([1., 1., 1., 1., 1., 1., 1., 1.]) torch.Size([8])
+b: tensor([[1., 1., 1., 1.],
+        [1., 1., 1., 1.]]) torch.Size([2, 4])
+c: tensor([[[1., 1.],
+         [1., 1.]],
+
+        [[1., 1.],
+         [1., 1.]]]) torch.Size([2, 2, 2])
+a.norm(1): tensor(8.)
+b.norm(1): tensor(8.)
+c.norm(1): tensor(8.)
+a.norm(2): tensor(2.8284)
+b.norm(2): tensor(2.8284)
+c.norm(2): tensor(2.8284)
+b.norm(1,dim=1): tensor([4., 4.])
+c.norm(1,dim=1): tensor([[2., 2.],
+        [2., 2.]])
+c.norm(1,dim=0): tensor([[2., 2.],
+        [2., 2.]])
+a: tensor([[1., 2., 3., 4.],
+        [5., 6., 7., 8.]])
+a.mean(): tensor(4.5000)
+a.sum(): tensor(36.)
+a.max(): tensor(8.)
+a.min(): tensor(1.)
+a.prod(),累乘: tensor(40320.)
+a.argmax(): tensor(7)
+a.argmin(1): tensor([0, 0])
+a.argmin(1,keepdim=True): tensor([[0],
+        [0]])
+a.topk(2),largest=Flase返回最小的k个: torch.return_types.topk(
+values=tensor([[4., 3.],
+        [8., 7.]]),
+indices=tensor([[3, 2],
+        [3, 2]]))
+a.kthvalue(2),第k小的: torch.return_types.kthvalue(
+values=tensor([2., 6.]),
+indices=tensor([1, 1]))
+```
+
+# 比较运算
+```python
+import torch
+
+#  >、>=、<、<=、!=、==，返回与原向量同形的True、False对比结果向量
+a = torch.arange(1, 9).view(2, 4).float()
+print('a:', a)
+print('a>2:', a > 2)
+
+# where 条件筛选
+cond = torch.tensor([[1, 1, 2, 2], [2, 2, 1, 1]])
+print('条件cond：', cond)
+b = torch.ones(8).reshape(2, 4)
+print('b:', b)
+print('a.where(cond<2,b):', a.where(cond < 2, b))
+
+# gather,查表操作，将原表的一个维度的数值作为字典表的索引，替换成字典表的值
+a = torch.tensor([[1, 0, 1], [0, 0, 0]])
+b = torch.tensor([8, 9, 10])
+print('torch.gather(b.expand(2,3),dim=1,index=a):',
+      torch.gather(b.expand(2, 3), dim=1, index=a))
+```
+输出：
+```
+a: tensor([[1., 2., 3., 4.],
+        [5., 6., 7., 8.]])
+a>2: tensor([[False, False,  True,  True],
+        [ True,  True,  True,  True]])
+条件cond： tensor([[1, 1, 2, 2],
+        [2, 2, 1, 1]])
+b: tensor([[1., 1., 1., 1.],
+        [1., 1., 1., 1.]])
+a.where(cond<2,b): tensor([[1., 2., 1., 1.],
+        [1., 1., 7., 8.]])
+torch.gather(b.expand(2,3),dim=1,index=a): tensor([[9, 8, 9],
+        [8, 8, 8]])
+```
 
 
 # Visdom可视化
