@@ -1,6 +1,6 @@
 PyTorch学习笔记
-* 安装[#安装]
-* Visdom可视化[#Visdom可视化]
+* [安装](#安装)
+* [Visdom可视化](#Visdom可视化)
 
 # 安装
 1. 安装Anaconda
