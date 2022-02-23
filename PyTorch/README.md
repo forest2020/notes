@@ -1,3 +1,10 @@
+# 安装
+1. 安装Anaconda
+2. 打开PyTorch[官网](https://pytorch.org/)
+3. 进入Pytorch安装页面，可能是[这个](https://pytorch.org/get-started/locally/)
+4. 在“START LOCALLY”标签页里面，根据自己电脑的操作系统和GPU情况，选择好安装条件，复制“Run this Command:”后面的内容
+5. 打开Anacoda命令提示符窗口，默认是base虚拟环境（可以创建新的，激活需要的环境），运行上一步复制的命令，完成PyTorch安装
+
 # Visdom可视化
 安装：pip install visdom
 启动服务：
