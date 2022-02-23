@@ -11,7 +11,7 @@
 ```
 python -m visdom.server
 ```
-启动成功后显示查看图标的网站，一般是 http://localhost:8097/
+启动成功后显示查看图标的网站，一般是 `http://localhost:8097/`
 如果能打开这个网页，表示启动成功了。
 在python程序中想visdom服务添加数据，实时显示图表。
 
