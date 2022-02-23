@@ -2,8 +2,9 @@ PyTorch学习笔记
 ========
 * [安装](#安装)
 * [PyTorch数据类型](#PyTorch数据类型)
- * [数据类型说明](#数据类型说明)
- * [标量](#标量)
+  * [数据类型说明](#数据类型说明)
+  * [标量](#标量)
+  * [向量](#向量)
 * [Visdom可视化](#Visdom可视化)
 
 
@@ -43,8 +44,10 @@ print(b, b.type(), b.shape)
 tensor(1) torch.LongTensor torch.Size([])
 tensor(2.) torch.FloatTensor torch.Size([])
 ```
+size是空的方括号（[]）代表标量，在深度学习中，训练中的损失loss就是一个标量。
 
-
+## 向量
+维度大于0的张量，可以理解为数组，支持任意维度。
 创建一个2行3列的符合正态分布的随机2维数组：
 ```python
 import torch
@@ -55,7 +58,8 @@ print(a.type())
 print(type(a))
 print(isinstance(a, torch.FloatTensor))
 print(isinstance(a, torch.cuda.FloatTensor))
-print(isinstance(a, torch.DoubleTensor))```
+print(isinstance(a, torch.DoubleTensor))
+```
 输出：
 ```
 tensor([[-0.1773, -0.4824, -0.1379],
@@ -64,9 +68,23 @@ torch.FloatTensor
 <class 'torch.Tensor'>
 True
 False
-False```
+False
+```
 使用```x = x.cuda()```将CPU中的Tensor转入GPU中，前期需要安装支持CUDA的PyTorch。
+1度向量的创建：
+```python
+import torch
 
+a = torch.tensor([7])
+b = torch.tensor([2.])
+print(a, a.type(), a.shape)
+print(b, b.type(), b.shape)
+```
+输出：
+```
+tensor([7]) torch.LongTensor torch.Size([1])
+tensor([2.]) torch.FloatTensor torch.Size([1])
+```
 
 
 # Visdom可视化
