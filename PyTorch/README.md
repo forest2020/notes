@@ -5,6 +5,7 @@ PyTorch学习笔记
   * [数据类型说明](#数据类型说明)
   * [标量](#标量)
   * [向量](#向量)
+  * [张量初始化](#张量初始化)
 * [Visdom可视化](#Visdom可视化)
 
 
@@ -48,6 +49,7 @@ size是空的方括号（[]）代表标量，在深度学习中，训练中的�
 
 ## 向量
 维度大于0的张量，可以理解为数组，支持任意维度。
+
 创建一个2行3列的符合正态分布的随机2维数组：
 ```python
 import torch
@@ -71,6 +73,7 @@ False
 False
 ```
 使用```x = x.cuda()```将CPU中的Tensor转入GPU中，前期需要安装支持CUDA的PyTorch。
+
 1度向量的创建：
 ```python
 import torch
@@ -84,6 +87,112 @@ print(b, b.type(), b.shape)
 ```
 tensor([7]) torch.LongTensor torch.Size([1])
 tensor([2.]) torch.FloatTensor torch.Size([1])
+```
+从numpy数组创建向量：
+```python
+import torch
+import numpy as np
+
+data = np.ones(2)
+a = torch.from_numpy(data)
+print(data, type(data), data.shape)
+print(a, a.type(), a.shape)
+# shape转换为python列表
+print(list(a.shape))
+```
+输出：
+```
+[1. 1.] <class 'numpy.ndarray'> (2,)
+tensor([1., 1.], dtype=torch.float64) torch.DoubleTensor torch.Size([2])
+[2]
+```
+
+## 张量初始化
+```python
+import torch
+
+# 为初始化的张量，具有内存中原有的数据，最好不要使用这种方法初始化
+a = torch.empty(2, 5)
+print('a:', a)
+
+# 随机初始化张量
+# 初始化[0,1]之间的均匀分布的张量
+b = torch.rand(2, 5)
+print('b:', b)
+
+# 初始化标准正太分布的张量
+c = torch.randn(2, 5)
+print('c:', c)
+
+# 创建一个与已有张量同样形状的张量
+d = torch.rand_like(a)
+print('d:', d)
+
+# 创建一个整数张量，指定最小值和最大值整数，包括最小值，不包括最大值，放回取样
+# 最后一个参数是维度
+e = torch.randint(3, 6, [2, 4])
+print('e:', e)
+
+# 创建一个数列，第三个参数可以指定间隔（步长）
+f = torch.arange(2, 10).reshape(2, 4)
+print('f:', f)
+# 在开始和结束区间内创建第三个参数指定个数的数列，包括两端点
+f1 = torch.linspace(2, 10, 3)
+print('f1:', f1)
+
+# 创建一个全部是同一个数值的张量
+g = torch.full([3, 2], 7)
+print('g:', g)
+
+# 创建全是1的张量
+h = torch.ones(3, 2)
+print('h:', h)
+
+# 创建全是0的张量
+i = torch.ones(3, 2)
+print('i:', i)
+
+# 创建单位矩阵
+j = torch.eye(3)
+print('j:', j)
+j1 = torch.eye(3, 4)
+print('j1', j1)
+
+# 创建一个随机打散的索引张量
+k = torch.randperm(10)
+print('k:', k)
+```
+输出：
+```
+a: tensor([[0., 0., 0., 0., 0.],
+        [0., 0., 0., 0., 0.]])
+b: tensor([[0.6758, 0.9819, 0.7428, 0.5941, 0.6671],
+        [0.5848, 0.2866, 0.6752, 0.1474, 0.6199]])
+c: tensor([[-0.9216,  0.7161, -0.6093,  0.5157,  0.9894],
+        [-1.7610, -0.9583, -1.2302, -0.5157,  0.8143]])
+d: tensor([[0.0291, 0.7307, 0.4028, 0.6687, 0.5023],
+        [0.4898, 0.4763, 0.1095, 0.9657, 0.8446]])
+e: tensor([[3, 3, 5, 3],
+        [5, 5, 4, 5]])
+f: tensor([[2, 3, 4, 5],
+        [6, 7, 8, 9]])
+f1: tensor([ 2.,  6., 10.])
+g: tensor([[7, 7],
+        [7, 7],
+        [7, 7]])
+h: tensor([[1., 1.],
+        [1., 1.],
+        [1., 1.]])
+i: tensor([[1., 1.],
+        [1., 1.],
+        [1., 1.]])
+j: tensor([[1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.]])
+j1 tensor([[1., 0., 0., 0.],
+        [0., 1., 0., 0.],
+        [0., 0., 1., 0.]])
+k: tensor([9, 3, 4, 7, 0, 6, 5, 2, 1, 8])
 ```
 
 
