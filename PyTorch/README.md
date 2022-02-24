@@ -14,6 +14,8 @@ PyTorch学习笔记
 * [数学运算](#数学运算)
 * [统计](#统计)
 * [比较运算](#比较运算)
+* [激活函数](#激活函数)
+* [损失和梯度计算](#损失和梯度计算)
 * [Visdom可视化](#Visdom可视化)
 
 
@@ -644,6 +646,58 @@ a.where(cond<2,b): tensor([[1., 2., 1., 1.],
 torch.gather(b.expand(2,3),dim=1,index=a): tensor([[9, 8, 9],
         [8, 8, 8]])
 ```
+
+
+# 激活函数
+```python
+import torch
+
+a = torch.linspace(-100, 100, 10)
+print('a:', a)
+
+# sigmoid，可以看到当x较大或者较小时的值都是1和0，梯度消失了
+print('sigmoid(a):', torch.sigmoid(a))
+
+# ReLU，有效的防止了梯度的消失
+print('relu(a):', torch.relu(a))
+```
+输出：
+```
+a: tensor([-100.0000,  -77.7778,  -55.5556,  -33.3333,  -11.1111,   11.1111,
+          33.3333,   55.5556,   77.7778,  100.0000])
+sigmoid(a): tensor([0.0000e+00, 1.6655e-34, 7.4564e-25, 3.3382e-15, 1.4945e-05, 9.9999e-01,
+        1.0000e+00, 1.0000e+00, 1.0000e+00, 1.0000e+00])
+relu(a): tensor([  0.0000,   0.0000,   0.0000,   0.0000,   0.0000,  11.1111,  33.3333,
+         55.5556,  77.7778, 100.0000])
+```
+
+
+# 损失和梯度计算
+```python
+import torch
+from torch.nn import functional as F
+
+# 均方差损失，MSE
+x = torch.tensor(2.)
+print('x:', x)
+# 需要求导的张量必须将requires_grad设置为True
+w = torch.full([1], 3., requires_grad=True)
+print('w:', w)
+mse = F.mse_loss(torch.tensor([5.7]), x*w)
+print('mse loss(2*3-5.7)**2=0.09:', mse)
+
+# 损失对w的梯度，导函数在x点的值
+print('d(loss)/d(w)=2*(x*w-5.7)*x=2*(2*3-5.7)*2:',
+      torch.autograd.grad(mse, [w]))
+```
+输出：
+```
+x: tensor(2.)
+w: tensor([3.], requires_grad=True)
+mse loss(2*3-5.7)**2=0.09: tensor(0.0900, grad_fn=<MseLossBackward0>)
+d(loss)/d(w)=2*(x*w-5.7)*x=2*(2*3-5.7)*2: (tensor([1.2000]),)
+```
+
 
 
 # Visdom可视化
