@@ -746,9 +746,52 @@ d(loss)/logits grads: tensor([-0.2025,  0.0944,  0.1081])
 
 # 优化器
 求Himmelblau二元函数的最小值的x,y
+
 ![alt Himmelblau Function](./images/himmelblau.jpg)
+
 函数的最小值点：
+
 ![alt Himmelblau Minima](./images/himmelblau_minima.jpg)
+
+使用matplotlib绘制函数曲面：
+```python
+import numpy as np
+from matplotlib import pyplot as plt
+
+
+def himmelblau(x):
+    # 定义himmelblau函数，传入一个1位数组，有2个元素，x[0]代表x，x[1]代表y
+    return (x[0]**2+x[1]-11)**2+(x[0]+x[1]**2-7)**2
+
+
+# 生成x、y±6之间的网格数据，间隔0.1
+x = np.arange(-6, 6, 0.1)
+y = np.arange(-6, 6, 0.1)
+X, Y = np.meshgrid(x, y)
+print('X,Y maps:', X.shape, Y.shape)
+
+# 计算函数值,传入了两个二维向量，对应元素计算函数值，返回一个[120,120]的向量
+Z = himmelblau([X, Y])
+print('Z shape:', Z.shape)
+
+# 显示函数的曲面
+fig = plt.figure('himmelblau')
+ax = fig.add_subplot(111, projection='3d')
+ax.plot_surface(X, Y, Z)
+ax.view_init(30, -30)  # 沿着Z轴旋转30°，沿着Y轴旋转-30
+ax.set_xlabel('x')
+ax.set_ylabel('y')
+plt.show()
+```
+输出：
+```
+X,Y maps: (120, 120) (120, 120)
+Z shape: (120, 120)
+```
+画出来的函数曲面图：
+
+![alt himmelblau_surface](./images/himmelblau_surface.jpg)
+
 
 # Visdom可视化
 安装：pip install visdom
