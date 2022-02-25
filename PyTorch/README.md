@@ -16,6 +16,7 @@ PyTorch学习笔记
 * [比较运算](#比较运算)
 * [激活函数](#激活函数)
 * [损失和梯度计算](#损失和梯度计算)
+* [优化器](#优化器)
 * [Visdom可视化](#Visdom可视化)
 
 
@@ -742,6 +743,10 @@ loss: tensor(1.1653, grad_fn=<DivBackward1>)
 d(loss)/logits grads: tensor([-0.2025,  0.0944,  0.1081])
 ```
 
+
+# 优化器
+求Himmelblau二元函数的最小值的x,y
+![alt Himmelblau Function](/images/himmelblau.jpg)
 
 
 # Visdom可视化
