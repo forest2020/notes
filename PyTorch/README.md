@@ -746,8 +746,9 @@ d(loss)/logits grads: tensor([-0.2025,  0.0944,  0.1081])
 
 # 优化器
 求Himmelblau二元函数的最小值的x,y
-![alt Himmelblau Function](/images/himmelblau.jpg)
-
+![alt Himmelblau Function](./images/himmelblau.jpg)
+函数的最小值点：
+![alt Himmelblau Minima](./images/himmelblau_minima.jpg)
 
 # Visdom可视化
 安装：pip install visdom
