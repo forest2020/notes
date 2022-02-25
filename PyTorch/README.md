@@ -675,6 +675,7 @@ relu(a): tensor([  0.0000,   0.0000,   0.0000,   0.0000,   0.0000,  11.1111,  33
 # 损失和梯度计算
 ```python
 import torch
+import torch.nn as nn
 from torch.nn import functional as F
 
 # 均方差损失，MSE
@@ -689,6 +690,39 @@ print('mse loss(2*3-5.7)**2=0.09:', mse)
 # 损失对w的梯度，导函数在x点的值
 print('d(loss)/d(w)=2*(x*w-5.7)*x=2*(2*3-5.7)*2:',
       torch.autograd.grad(mse, [w]))
+
+# 第二种方法计算梯度，backward方法
+# 上面读取了一次梯度后没有设置保留，不能第二次读取，需要再次计算
+mse = F.mse_loss(torch.tensor([5.7]), x*w)
+mse.backward()
+print('mse.backward(), w.grad:', w.grad)
+
+# 用于分类的softmax，网络的输出通过softmax转换成概率
+logits = torch.rand(3, requires_grad=True)
+print('logits:', logits)
+pred = F.softmax(logits, dim=0)
+print('pred:', pred)
+print('pred sum:', pred.sum())
+# pred.backward()会报错，backward只能对标量进行
+# 查看logits的导数值，注意必须设置保留计算图，否则无法获取后面2个元素的导数值
+print('d(pred[0])/logits grads:',
+      torch.autograd.grad(pred[0], [logits], retain_graph=True))
+print('d(pred[1])/logits grads:',
+      torch.autograd.grad(pred[1], [logits], retain_graph=True))
+print('d(pred[2])/logits grads:',
+      torch.autograd.grad(pred[2], [logits], retain_graph=True))
+# 定义真是的标签
+labels = torch.tensor([1., 0, 0])
+print('labels:', labels)
+# 定义交叉熵对象
+criteon = nn.CrossEntropyLoss()
+# 计算交叉熵损失,需要2维的向量，第0维是批次，第1维是预测概率和实际标签
+loss = criteon(pred.unsqueeze(0), labels.unsqueeze(0))
+print('loss:', loss)
+# 后向传播
+loss.backward()
+# 显示梯度
+print('d(loss)/logits grads:', logits.grad)
 ```
 输出：
 ```
@@ -696,6 +730,16 @@ x: tensor(2.)
 w: tensor([3.], requires_grad=True)
 mse loss(2*3-5.7)**2=0.09: tensor(0.0900, grad_fn=<MseLossBackward0>)
 d(loss)/d(w)=2*(x*w-5.7)*x=2*(2*3-5.7)*2: (tensor([1.2000]),)
+mse.backward(), w.grad: tensor([1.2000])
+logits: tensor([0.4118, 0.6768, 0.7699], requires_grad=True)
+pred: tensor([0.2678, 0.3491, 0.3831], grad_fn=<SoftmaxBackward0>)
+pred sum: tensor(1.0000, grad_fn=<SumBackward0>)
+d(pred[0])/logits grads: (tensor([ 0.1961, -0.0935, -0.1026]),)
+d(pred[1])/logits grads: (tensor([-0.0935,  0.2272, -0.1337]),)
+d(pred[2])/logits grads: (tensor([-0.1026, -0.1337,  0.2363]),)
+labels: tensor([1., 0., 0.])
+loss: tensor(1.1653, grad_fn=<DivBackward1>)
+d(loss)/logits grads: tensor([-0.2025,  0.0944,  0.1081])
 ```
 
 
