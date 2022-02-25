@@ -18,6 +18,7 @@ PyTorch学习笔记
 * [损失和梯度计算](#损失和梯度计算)
 * [优化器](#优化器)
 * [Visdom可视化](#Visdom可视化)
+* [搭建一个简单的分类网络](#搭建一个简单的分类网络)
 
 
 # 安装
@@ -835,9 +836,6 @@ step 18000: x=[3.0, 2.0], f(x)=0.0
 
 
 
-
-
-
 # Visdom可视化
 安装：pip install visdom
 启动服务：
@@ -860,3 +858,157 @@ viz.line([[0.,0.]],[0.],win='train1',opts={'title':'train loss&acc','legend':['l
 ```python
 viz.line([[loss.item(),acc.item()]],[global_step],win='train1', update='append')
 ```
+
+
+# 搭建一个简单的分类网络
+```pthin
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.nn import functional as F
+from torchvision import datasets, transforms
+from visdom import Visdom
+
+# 定义批次、学习率、训练次数
+batch_size = 200
+learning_rate = 1e-3
+epochs = 10
+
+# 使用手写数字数据集，做一个0~9手写数字的识别
+# 加载训练集
+train_loader = torch.utils.data.DataLoader(
+    datasets.MNIST('./data', train=True, download=True,
+                   transform=transforms.Compose([
+                       transforms.ToTensor(),
+                       transforms.Normalize((0.1307,), (0.3081,))
+                   ])),
+    batch_size=batch_size, shuffle=True)
+# 加载测试集
+test_loader = torch.utils.data.DataLoader(
+    datasets.MNIST('./data', train=False, transform=transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])),
+    batch_size=batch_size, shuffle=True)
+
+# 定义网络，一个4层的全连接网络
+# 第1层784个神经元，等于图像的像素个数，灰度图像,28*28，共782个像素
+w1, b1 = torch.randn(300, 784, requires_grad=True), torch.randn(
+    300, requires_grad=True)
+# 第2层300个神经元，因此第1层输出就是300
+w2, b2 = torch.randn(200, 300, requires_grad=True), torch.randn(
+    200, requires_grad=True)
+# 第3层200个神经元，因此第2层输出就是200
+w3, b3 = torch.randn(100, 200, requires_grad=True), torch.randn(
+    100, requires_grad=True)
+# 第4层100个神经元，因此第3层输出就是100，共10个标签（0~9），输出为标签数量
+w4, b4 = torch.randn(10, 100, requires_grad=True), torch.randn(
+    10, requires_grad=True)
+
+# 用正态分布初始化参数，这样才能在训练中找到全局最小值，否则找到的是局部最小值
+torch.nn.init.kaiming_normal(w1)
+torch.nn.init.kaiming_normal(w2)
+torch.nn.init.kaiming_normal(w3)
+torch.nn.init.kaiming_normal(w4)
+
+
+def forward(x):
+    # 前向传播函数
+    x = x@w1.T+b1
+    x = F.relu(x)
+
+    x = x@w2.T+b2
+    x = F.relu(x)
+
+    x = x@w3.T+b3
+    x = F.relu(x)
+
+    x = x@w4.T+b4
+    x = F.relu(x)
+
+    return x
+
+
+# 优化器，使用Adam
+optimizer = optim.Adam([w1, b1, w2, b2, w3, b3], lr=learning_rate)
+
+# 损失函数，交叉熵
+criteon = nn.CrossEntropyLoss()
+
+# 可视化训练过程，使用Visdom，观察训练集的损失和准去率
+viz = Visdom()
+viz.line([[0., 0.]], [0.], win='train1', opts={
+         'title': 'train loss&acc', 'legend': ['loss', 'acc.']})
+
+# 训练
+global_step = 0
+for epoch in range(epochs):
+    for batch_idx, (data, target) in enumerate(train_loader):
+        # 彩色通道是1，去掉它
+        data = data.view(-1, 28*28)
+
+        # 得到网络的推断的特征向量
+        logits = forward(data)
+        # 这一步做了sofmat和交叉熵损失
+        loss = criteon(logits, target)
+
+        # 反向传播，调整参数w和b
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        # 每训练10次显示一组数据到Visdom中
+        if batch_idx % 10 == 0:
+            pred = logits.argmax(1)
+            acc = pred.eq(target).sum()/len(target)
+            viz.line([[loss.item(), acc.item()]], [global_step],
+                     win='train1', update='append')
+            global_step += 1
+            viz.images(data.view(-1, 1, 28, 28)[0:10], win='x')
+            viz.text(str(pred.detach().numpy()),
+                     win='pred', opts={'title': 'pred'})
+
+        # 每100次打印一次训练结果
+        if batch_idx % 100 == 0:
+            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                epoch, batch_idx * len(data), len(train_loader.dataset),
+                100. * batch_idx / len(train_loader), loss.item()))
+
+    # 训练结束，测试模型的性能
+    test_loss = 0
+    correct = 0
+    for data, target in test_loader:
+        data = data.view(-1, 28*28)
+        logits = forward(data)
+
+        # 累加测试集上的损失
+        test_loss += criteon(logits, target)
+
+        # 从特征向量数组中过滤出每个向量最大值的索引，这个索引对应就是数字
+        pred = logits.data.max(1)[1]
+        # 与标签对比，累加正确的识别的图像数量
+        correct += pred.eq(target.data).sum()
+
+    #
+    test_loss /= len(test_loader.dataset)
+    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+        test_loss, correct, len(test_loader.dataset),
+        100. * correct / len(test_loader.dataset)))
+```
+输出：
+```
+....
+Test set: Average loss: 0.0015, Accuracy: 8905/10000 (89%)
+
+Train Epoch: 9 [0/60000 (0%)]	Loss: 0.255767
+Train Epoch: 9 [20000/60000 (33%)]	Loss: 0.268368
+Train Epoch: 9 [40000/60000 (67%)]	Loss: 0.171398
+
+Test set: Average loss: 0.0014, Accuracy: 8932/10000 (89%)
+```
+训练过程中损失和准确率变化曲线：
+
+![alt MNIST_train_chart](./images/MNIST_train_chart.jpg)
+
+
+
