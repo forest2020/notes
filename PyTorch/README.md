@@ -19,6 +19,7 @@ PyTorch学习笔记
 * [优化器](#优化器)
 * [Visdom可视化](#Visdom可视化)
 * [搭建一个简单的分类网络](#搭建一个简单的分类网络)
+* [正则化(Regularization)](#正则化(Regularization)
 
 
 # 安装
@@ -1009,6 +1010,13 @@ Test set: Average loss: 0.0014, Accuracy: 8932/10000 (89%)
 训练过程中损失和准确率变化曲线：
 
 ![alt MNIST_train_chart](./images/MNIST_train_chart.jpg)
+
+
+
+
+# 正则化(Regularization)
+
+
 
 
 
