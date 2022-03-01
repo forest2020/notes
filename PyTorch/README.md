@@ -21,7 +21,7 @@ PyTorch学习笔记
 * [搭建一个简单的分类网络](#搭建一个简单的分类网络)
 * [正则化Regularization](#正则化Regularization)
   * [范数](#范数)
-  * [深度学习中的正则化](深度学习中的正则化)
+  * [深度学习中的正则化](#深度学习中的正则化)
 
 
 # 安装
@@ -1026,14 +1026,18 @@ Test set: Average loss: 0.0014, Accuracy: 8932/10000 (89%)
 * L2范数：当p=2时，是L2范数， 表示某个向量中所有元素平方和再开根， 也就是欧几里得距离公式。
 
 ## 深度学习中的正则化
-* L1正则化算法：
+* L1正则化（Lasso回归）算法：
 
 ![alt regularization L1](./images/regularization_L.png)
-* L2正则化算法：
+* L2正则化（岭回归）算法：
 
 ![alt regularization L2](./images/regularization_L2.png)
 
-PyTorch中没有L1正则化的实现，L2正则化示例如下：
+* 弹性网回归算法：
+
+![alt ElasticNet](./images/ElasticNet.png)
+
+PyTorch中没有L1正则化和弹性网回归的实现，L2正则化示例如下：
 ```python
 import torch
 import torch.nn as nn
