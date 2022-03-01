@@ -1035,7 +1035,7 @@ Test set: Average loss: 0.0014, Accuracy: 8932/10000 (89%)
 
 * 弹性网回归算法：
 
-![alt ElasticNet](./images/ElasticNet.png)
+![alt ElasticNet](./images/regularization_ElasticNet.png)
 
 PyTorch中没有L1正则化和弹性网回归的实现，L2正则化示例如下：
 ```python
