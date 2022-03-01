@@ -21,6 +21,7 @@ PyTorch学习笔记
 * [搭建一个简单的分类网络](#搭建一个简单的分类网络)
 * [正则化Regularization](#正则化Regularization)
   * [范数](#范数)
+  * [深度学习中的L1、L2正则化](深度学习中的L1、L2正则化)
 
 
 # 安装
@@ -1019,7 +1020,95 @@ Test set: Average loss: 0.0014, Accuracy: 8932/10000 (89%)
 ## 范数
 范数是衡量某个向量空间（或矩阵）中的每个向量以长度或大小。范数的一般化定义：对实数p>=1， 范数定义如下：
 
-![alt norm formula](./images/norm_formula.jpg)
+![alt norm formula](./images/norm_formula.png)
+
+* L1范数：当p=1时，是L1范数，其表示某个向量中所有元素绝对值的和。
+* L2范数：当p=2时，是L2范数， 表示某个向量中所有元素平方和再开根， 也就是欧几里得距离公式。
+
+## 深度学习中的L1、L2正则化
+* L1正则化算法：
+
+![alt regularization L1](./images/regularization_L.png)
+* L2正则化算法：
+
+![alt regularization L2](./images/regularization_L2.png)
+
+PyTorch中没有L1正则化的实现，L2正则化示例如下：
+```python
+import torch
+import torch.nn as nn
+
+# 构建一个1层的神经网络，使用2个神经元，输入3个数字，输出2个数字
+# 每次输入2组数据
+labels = torch.tensor([[0, 1.], [1, 0]])
+ce = nn.CrossEntropyLoss()
+
+# 不使用L2正则化
+print('----- not L2 regularization -----')
+w1 = torch.tensor([[1, 1.2, 1.3], [1.1, 0.9, 1.4]], requires_grad=True)
+x1 = torch.tensor([[12., 11., 10.], [15., 14., 13.]])
+
+optimizer1 = torch.optim.SGD([w1], lr=0.1)
+
+logits1 = x1@w1.T
+print('logits1=x1@w1.T:', logits1)
+
+loss1 = ce(logits1, labels)
+print('ce loss:', loss1)
+w1_grad = torch.autograd.grad(loss1, w1, retain_graph=True)
+print('d(loss1)/d(w1):', w1_grad)
+print('manual cal new w1, w1-lr*w1_grad:', w1-0.1*w1_grad[0])
+
+optimizer1.zero_grad()
+loss1.backward()
+optimizer1.step()
+print('backward new w1:', w1)
+
+# 使用L2正则化
+print('----- L2 regularization -----')
+w2 = torch.tensor([[1, 1.2, 1.3], [1.1, 0.9, 1.4]], requires_grad=True)
+x2 = torch.tensor([[12., 11., 10.], [15., 14., 13.]])
+
+optimizer2 = torch.optim.SGD([w2], lr=0.1, weight_decay=0.1)
+
+logits2 = x2@w2.T
+print('logits2=x2@w2.T:', logits2)
+
+loss2 = ce(logits2, labels)
+print('ce loss:', loss2)
+w2_grad = torch.autograd.grad(loss2, w2, retain_graph=True)
+print('d(loss2)/d(w2):', w2_grad)
+print('manual cal new w2, w2-lr*w2_grad-lr*lambda*w2:',
+      w2-0.1*w2_grad[0]-0.1*0.1*w2)
+
+optimizer2.zero_grad()
+loss2.backward()
+optimizer2.step()
+print('backward new w2:', w2)
+```
+输出
+```
+----- not L2 regularization -----
+logits1=x1@w1.T: tensor([[38.2000, 37.1000],
+        [48.7000, 47.3000]], grad_fn=<MmBackward0>)
+ce loss: tensor(0.8039, grad_fn=<DivBackward1>)
+d(loss1)/d(w1): (tensor([[ 3.0179,  2.7417,  2.4655],
+        [-3.0179, -2.7417, -2.4655]]),)
+manual cal new w1, w1-lr*w1_grad: tensor([[0.6982, 0.9258, 1.0534],
+        [1.4018, 1.1742, 1.6466]], grad_fn=<SubBackward0>)
+backward new w1: tensor([[0.6982, 0.9258, 1.0534],
+        [1.4018, 1.1742, 1.6466]], requires_grad=True)
+----- L2 regularization -----
+logits2=x2@w2.T: tensor([[38.2000, 37.1000],
+        [48.7000, 47.3000]], grad_fn=<MmBackward0>)
+ce loss: tensor(0.8039, grad_fn=<DivBackward1>)
+d(loss2)/d(w2): (tensor([[ 3.0179,  2.7417,  2.4655],
+        [-3.0179, -2.7417, -2.4655]]),)
+manual cal new w2, w2-lr*w2_grad-lr*lambda*w2: tensor([[0.6882, 0.9138, 1.0404],
+        [1.3908, 1.1652, 1.6326]], grad_fn=<SubBackward0>)
+backward new w2: tensor([[0.6882, 0.9138, 1.0404],
+        [1.3908, 1.1652, 1.6326]], requires_grad=True)
+```
 
 
 
