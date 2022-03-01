@@ -1028,7 +1028,7 @@ Test set: Average loss: 0.0014, Accuracy: 8932/10000 (89%)
 ## 深度学习中的正则化
 * L1正则化（Lasso回归）算法：
 
-![alt regularization L1](./images/regularization_L.png)
+![alt regularization L1](./images/regularization_L1.png)
 * L2正则化（岭回归）算法：
 
 ![alt regularization L2](./images/regularization_L2.png)
