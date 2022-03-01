@@ -19,7 +19,8 @@ PyTorch学习笔记
 * [优化器](#优化器)
 * [Visdom可视化](#Visdom可视化)
 * [搭建一个简单的分类网络](#搭建一个简单的分类网络)
-* [正则化Regularization)](#正则化Regularization)
+* [正则化Regularization](#正则化Regularization)
+  * [范数](#范数)
 
 
 # 安装
@@ -1015,8 +1016,10 @@ Test set: Average loss: 0.0014, Accuracy: 8932/10000 (89%)
 
 
 # 正则化Regularization
+## 范数
+范数是衡量某个向量空间（或矩阵）中的每个向量以长度或大小。范数的一般化定义：对实数p>=1， 范数定义如下：
 
-
+![alt norm formula](./images/norm_formula.jpg)
 
 
 
