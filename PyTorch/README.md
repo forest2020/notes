@@ -22,6 +22,7 @@ PyTorch学习笔记
 * [正则化Regularization](#正则化Regularization)
   * [范数](#范数)
   * [深度学习中的正则化](#深度学习中的正则化)
+* [学习率](#学习率)
 
 
 # 安装
@@ -837,6 +838,7 @@ step 18000: x=[3.0, 2.0], f(x)=0.0
 ```
 找到了函数的一个最小值点(3,2)，x初始化不同的位置，可以找到临近的另外3个最小值点。
 
+动量（momentum）：torch.optim.SDG的momentum参数，取值范围0~1，代表取上一次梯度向量大小的比例，用乘以这个比例的上一次梯度向量与本次的梯度向量相加，得到本次更新的最终向量，这样可以避免陷入局部最小值出不来，造成网络训练效果差。torch.optim.Adam函数中没有momentum参数，Adam算法内置了动量的支持。
 
 
 # Visdom可视化
@@ -1114,5 +1116,35 @@ backward new w2: tensor([[0.6882, 0.9138, 1.0404],
         [1.3908, 1.1652, 1.6326]], requires_grad=True)
 ```
 
+
+# 学习率
+开始训练的时候学习率设置大一些，比如0.01、0.001，随着训练的进行，当快到达最低点的时候，应该减小学习率，这样才能更准确的到达最低点，否则因为学习率大，每次W调整的步长大，会在最低点左右摆动，而始终无法到达最低点。学习率的调整方案可以采用条件式或者固定式两种方案。
+* 条件式学习率调整方案
+
+```python
+# 优化器，初始学习率是0.1
+optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
+# 学习率优化方案，监控的指标在patience个step没有变化，下一个step时就将lr缩小factor倍
+scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
+
+#训练
+for epoch in range(10):
+    train(...)
+    val_loss = validate(...)
+    scheduler.step(val_loss)
+```
+* 固定式学习率调整方案
+```python
+# 优化器，初始学习率是0.1
+optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
+# 学习率优化方案，每30个step，lr缩小为原来的gamma倍
+scheduler=torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+
+#训练
+for epoch in range(100):
+    train(...)
+    validate(...)
+    scheduler.step()
+```
 
 
