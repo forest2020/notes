@@ -1156,16 +1156,31 @@ for epoch in range(100):
 # 丢弃
 丢弃（Dropout），随机丢掉一些神经元，相当于将神经元的输出置为0，这样可以防止模型过拟合。
 ```python
-net = torch.nn.Sequential(
-    torch.nn.Linear(784, 300),
-    torch.nn.Dropout(0.2),
-    torch.nn.ReLU(),
-    torch.nn.Linear(300, 100),
-    torch.nn.ReLU()
-)
-```
+import torch
+import torch.nn as nn
+import numpy as np
 
-torch.nn.Dropout的参数表示被丢掉神经元的概率，丢掉的数量
+# 定义一个随机丢弃20%输入数据的Dropout对象，输入向量的元素有20%会被置为0
+m = nn.Dropout(p=0.2)
+
+# 定义一个输入向量，作为Dropout的输入，做1000次随机丢弃实验实验
+input = torch.randn(20, 16)
+percentage_retain = []
+for i in range(1000):
+    output = m(input)
+    # 将每次保留下来的百分比保存到列表，不等于0的元素个数/元素总数
+    percentage_retain.append((output != 0).sum()/input.numel())
+
+
+# 验证1000次保留下来的百分比平均值和理论上的0.8（1-0.2）是否一致
+print('average percentage of 1000 times dropout：', np.array(
+    percentage_retain).sum() / len(percentage_retain))
+```
+输出：
+```
+average percentage of 1000 times dropout： 0.80015625
+```
+实验证明nn.Dropout中设置的概率对应丢弃输入的百分比
 
 
 
