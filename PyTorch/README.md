@@ -1180,7 +1180,36 @@ print('average percentage of 1000 times dropout：', np.array(
 ```
 average percentage of 1000 times dropout： 0.80015625
 ```
-实验证明nn.Dropout中设置的概率对应丢弃输入的百分比
+实验证明nn.Dropout中设置的概率对应丢弃输入的百分比。
+
+使用PyTorch搭建一个有Dropout的网络：
+```python
+import torch.nn as nn
+
+# 定义一个有Dropout的网络
+net = nn.Sequential(
+    nn.Linear(784, 300),
+    nn.Dropout(0.5),
+    nn.ReLU(),
+    nn.Linear(300, 100),
+    nn.Dropout(0.5),
+    nn.ReLU(),
+    nn.Linear(100, 10)
+)
+
+for epoch in range(1000):
+    # 在训练的时候，需要做Dropout，切换成训练模型
+    net.train()
+    for batch_idx, (data, target) in enumerate(train_loader):
+        ...
+
+    # 在评估中，需要关闭Dropout，切换成评估模式
+    net.eval()
+    test_loss = 0
+    correct = 0
+    for data, target in test_loader:
+        ...
+```
 
 
 
