@@ -25,6 +25,7 @@ PyTorch学习笔记
 * [学习率](#学习率)
 * [早停](#早停)
 * [丢弃](#丢弃)
+* [卷积](#卷积)
 
 
 # 安装
@@ -1210,6 +1211,86 @@ for epoch in range(1000):
     for data, target in test_loader:
         ...
 ```
+
+# 卷积
+```python
+import torch
+import torch.nn as nn
+import numpy as np
+import matplotlib.pyplot as plt
+from PIL import Image
+
+# 用卷积做一个将彩色RGB图像转为灰度图像的操作
+# 输入是RGB 3通道图像，输出也是RGB 3通道，只不过每个通道上的像素值是灰度值
+# RGB装灰度公式：Gray = R*0.299 + G*0.587 + B*0.114
+# 刚好可以使用卷积实现上面的公式，1*1卷积核，卷积计算是使用每成的卷积核计算该层的
+# 卷积后的值，然后相加，公式是：x_conv=x0 * k0 + x1 * k1 + x2 * k2
+# x_conv是卷积后的值，x0、x1、x2是3层相同位置的x值，k0、k1、k2是卷积核
+# k0=[[0.299]]，k1=[[0.587]]，k2=[[0.114]]
+
+# 一个输入、输出都是3通道的卷积操作，卷积核是3*3*1*1
+layer = nn.Conv2d(3, 3, kernel_size=1, stride=1, padding=0)
+print('layer kernel shape:', layer.weight.shape)
+
+# 读入图片
+image = Image.open(r'd:\zebra.jpg')
+image = np.array(image)
+print('image shape:', image.shape)
+plt.figure()
+plt.imshow(image)
+
+
+# 将图片放入输入向量，batch size=1，通道数=3，宽度和高度是image的宽高
+# numpy中将通道放到了第3个维度，需要做一次转置，将通道放入到第1个维度，宽高顺序不变
+x = torch.from_numpy(image.transpose(2, 0, 1)).float()
+print('input x shape:', x.shape)
+# 在第一个维度前扩展一个batch size维度，用于网络的输入
+x = x.unsqueeze(0)
+print('add batch size dim, x shape:', x.shape)
+
+# 定义锐化卷积核，针对输入3通道，定义3通道的卷积核，应该是[3,1,1]
+# 每个输入通道需要一个卷积核，需要3个；每个输出通道是3输入通道乘以自己的卷积核，
+# 再将3个通道的结果相加；因此需要9个[1,1]卷积核
+kernel = torch.tensor([[[0.299]], [[0.587]], [[0.114]]])
+# 前面扩展一个输出通道，并重复到3个输出通道上
+kernel = kernel.unsqueeze(0).repeat(3, 1, 1, 1)
+print('init kernel shape:', kernel.shape)
+
+# 卷积和设置到网络
+layer.weight = torch.nn.Parameter(kernel)
+# 执行一次卷积操作
+out = layer.forward(x)
+print('out shape:', out.shape)
+
+# 转换到numpy数组，取整，去掉batch size维度，将通道
+image_conv = out.detach().numpy().astype(int)
+image_conv = image_conv.squeeze(0).transpose(1, 2, 0)
+
+# 显示结果
+plt.figure()
+plt.imshow(image_conv)
+
+# 保存到文件
+image_res = Image.fromarray(np.uint8(image_conv))
+image_res.save(r'D:\zebra_gray.jpg')
+```
+输出：
+```
+layer kernel shape: torch.Size([3, 3, 1, 1])
+image shape: (426, 640, 3)
+input x shape: torch.Size([3, 426, 640])
+add batch size dim, x shape: torch.Size([1, 3, 426, 640])
+init kernel shape: torch.Size([3, 3, 1, 1])
+out shape: torch.Size([1, 3, 426, 640])
+```
+
+输入图片：
+
+![alt zebra](./images/zebra.jpg)
+
+输出图片：
+
+![alt zebra](./images/zebra_gray.jpg)
 
 
 
