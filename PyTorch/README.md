@@ -1223,7 +1223,7 @@ from PIL import Image
 # 用卷积做一个将彩色RGB图像转为灰度图像的操作
 # 输入是RGB 3通道图像，输出也是RGB 3通道，只不过每个通道上的像素值是灰度值
 # RGB装灰度公式：Gray = R*0.299 + G*0.587 + B*0.114
-# 刚好可以使用卷积实现上面的公式，1*1卷积核，卷积计算是使用每成的卷积核计算该层的
+# 刚好可以使用卷积实现上面的公式，1*1卷积核，卷积计算是使用每个通道的卷积核计算该通道的
 # 卷积后的值，然后相加，公式是：x_conv=x0 * k0 + x1 * k1 + x2 * k2
 # x_conv是卷积后的值，x0、x1、x2是3层相同位置的x值，k0、k1、k2是卷积核
 # k0=[[0.299]]，k1=[[0.587]]，k2=[[0.114]]
@@ -1248,21 +1248,21 @@ print('input x shape:', x.shape)
 x = x.unsqueeze(0)
 print('add batch size dim, x shape:', x.shape)
 
-# 定义锐化卷积核，针对输入3通道，定义3通道的卷积核，应该是[3,1,1]
+# 定义灰度转换卷积核，针对输入3通道，定义3通道的卷积核，应该是[3,1,1]
 # 每个输入通道需要一个卷积核，需要3个；每个输出通道是3输入通道乘以自己的卷积核，
 # 再将3个通道的结果相加；因此需要9个[1,1]卷积核
 kernel = torch.tensor([[[0.299]], [[0.587]], [[0.114]]])
-# 前面扩展一个输出通道，并重复到3个输出通道上
+# 前面扩展一个输出通道，并重复为3个
 kernel = kernel.unsqueeze(0).repeat(3, 1, 1, 1)
 print('init kernel shape:', kernel.shape)
 
-# 卷积和设置到网络
+# 将卷积和设置到网络
 layer.weight = torch.nn.Parameter(kernel)
 # 执行一次卷积操作
 out = layer.forward(x)
 print('out shape:', out.shape)
 
-# 转换到numpy数组，取整，去掉batch size维度，将通道
+# 转换到numpy数组，取整，去掉batch size维度，将色彩通道放到最后
 image_conv = out.detach().numpy().astype(int)
 image_conv = image_conv.squeeze(0).transpose(1, 2, 0)
 
