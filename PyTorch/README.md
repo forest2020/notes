@@ -26,6 +26,8 @@ PyTorch学习笔记
 * [早停](#早停)
 * [丢弃](#丢弃)
 * [卷积](#卷积)
+* [池化](#池化)
+* [Batch Normalization](#Batch Normalization)
 
 
 # 安装
@@ -1293,8 +1295,43 @@ out shape: torch.Size([1, 3, 426, 640])
 ![alt zebra](./images/zebra_gray.jpg)
 
 
+# 池化
+```python
+import torch
+import torch.nn as nn
 
+# 对一个2*2的向量做池化，大小是2*2，步长是2
+#   1 0 0 0
+#   0 0 0 2
+#   0 3 0 0
+#   0 0 4 0
+a = torch.tensor([[1., 0, 0, 0], [0, 0, 0, 2], [0, 3, 0, 0], [0, 0, 4, 0]])
+# 池化需要输入4维向量：[batch_size,channel,h,w]
+a = a.unsqueeze(0).unsqueeze(0)
 
+# 最大值池化，将2*2区域中的元素取最大的一个合成一个元素
+layer_maxpool = nn.MaxPool2d(2, 2)
+out_max = layer_maxpool(a)
+print('Max Pool:', out_max)
+print('Max Pool shape:', out_max.shape)
+
+# 平均值池化，将2*2区域中的元素求平均值合成一个元素
+layer_avg = nn.AvgPool2d(2, 2)
+out_avg = layer_avg(a)
+print('Avg Pool:', out_avg)
+print('Avg Pool shpae:', out_avg.shape)
+```
+输出：
+```
+Max Pool: tensor([[[[1., 2.],
+          [3., 4.]]]])
+Max Pool shape: torch.Size([1, 1, 2, 2])
+Avg Pool: tensor([[[[0.2500, 0.5000],
+          [0.7500, 1.0000]]]])
+Avg Pool shpae: torch.Size([1, 1, 2, 2])
+```
+
+# Batch Normalization
 
 
 
