@@ -1347,6 +1347,37 @@ Batch Normalization的做法是对每个channel，对所有batch size的数据�
 2d卷积网络中的Batch-Norm：  
 ![alt 2D Batch Norm](./images/batch-norm.jpg)
 
+μ和σ是单词batch统计出来的，γ和β是可学习的。PyTorch会记录训练所有batch中统计出来的总的μ和σ，叫做Running-μ、Running-σ。推断的时候使用训练过程中的Running-μ、Running-σ作为平均值和方差。训练开始的时候Running-μ=0、Running-σ=1，γ=1、β=0。然后PyTorch使用特定的算法来更新他们，参见PyTorch官方文档对“torch.nn.BatchNorm2d”的说明。
+```python
+import torch
+import torch.nn as nn
+
+# 定义一个批次是100，通道数是3，H*W=28*28的向量
+x = torch.rand(100, 3, 28, 28)
+
+# 定义一个Batch Normalization层，指定的是通道数
+layer = nn.BatchNorm2d(3)
+# 初始的Running-μ、Running-σ、γ和β
+print('Initial Running-μ, Running-σ, γ, β:', layer.running_mean,
+      layer.running_var, layer.weight, layer.bias)
+
+# 做一次Batch Normalization
+out = layer(x)
+# 做一次Forward的Running-μ和Running-σ根据统计数据发生变化，在做一次反向传输后γ和β才会更新
+print('One time  Running-μ, Running-σ, γ, β:', layer.running_mean,
+      layer.running_var, layer.weight, layer.bias)
+```
+输出:
+```
+Initial Running-μ, Running-σ, γ, β: tensor([0., 0., 0.]) tensor([1., 1., 1.]) Parameter containing:
+tensor([1., 1., 1.], requires_grad=True) Parameter containing:
+tensor([0., 0., 0.], requires_grad=True)
+One time  Running-μ, Running-σ, γ, β: tensor([0.0502, 0.0501, 0.0502]) tensor([0.9083, 0.9083, 0.9083]) Parameter containing:
+tensor([1., 1., 1.], requires_grad=True) Parameter containing:
+tensor([0., 0., 0.], requires_grad=True)
+```
+
+
 ## Layer Normalization
 Layer Normalization的做法是对每个batch size，对所有channel的数据求平均数（μ）和标准方差（σ），然后使用z-score进行归一化处理。
 
