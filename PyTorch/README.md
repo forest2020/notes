@@ -1347,7 +1347,10 @@ Batch Normalization的做法是对每个channel，对所有batch size的数据�
 2d卷积网络中的Batch-Norm：  
 ![alt 2D Batch Norm](./images/batch-norm.jpg)
 
-μ和σ是单词batch统计出来的，γ和β是可学习的。PyTorch会记录训练所有batch中统计出来的总的μ和σ，叫做Running-μ、Running-σ。推断的时候使用训练过程中的Running-μ、Running-σ作为平均值和方差。训练开始的时候Running-μ=0、Running-σ=1，γ=1、β=0。然后PyTorch使用特定的算法来更新他们，参见PyTorch官方文档对“torch.nn.BatchNorm2d”的说明。
+μ和σ是单词batch统计出来的，γ和β是可学习的。PyTorch会记录训练所有batch中统计出来的总的μ和σ，叫做Running-μ、Running-σ。推断的时候使用训练过程中的Running-μ、Running-σ作为平均值和方差。训练开始的时候Running-μ=0、Running-σ=1，γ=1、β=0。然后根据下面的公司进行计算：
+
+![alt batch norm trans](./images/batch-norm-trans.png)
+
 ```python
 import torch
 import torch.nn as nn
