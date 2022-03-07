@@ -32,6 +32,7 @@ PyTorch学习笔记
   * [Layer Normalization](#layer-normalization)
   * [Instance Normalization](#instance-normalization)
   * [Group Normalization](#group-normalization)
+* [实现残差网络单元](#实现残差网络单元)
 
 
 # 安装
@@ -1391,6 +1392,51 @@ Instance Normalization的做法是对每个batch size、每个channel，对H*W�
 
 ## Group Normalization
 Group Normalization的做法是对每个batch size、全部channel，对H*W的数据求平均数（μ）和标准方差（σ），然后使用z-score进行归一化处理。
+
+# 实现残差网络单元
+```python
+import torch
+import torch.nn as nn
+
+# 实现一个残差模块(ResNet模块),输入通道数3，输出通道数量5
+ch_in = 3
+ch_out = 5
+# 定义第一个卷积层
+conv1 = nn.Conv2d(ch_in, ch_out, 3, stride=1, padding=1)
+# 定义一个BN层
+bn1 = nn.BatchNorm2d(ch_out)
+# 定义第二个卷积层
+conv2 = nn.Conv2d(ch_out, ch_out, 3, stride=1, padding=1)
+# 定义二个BN层
+bn2 = nn.BatchNorm2d(ch_out)
+
+# 定义短接层，如果ch_in==ch_out，这个层不对输入的x做任何修改，直接输出
+# 如果输入和输出的层数不相等，需要使用卷积核为1的卷积层改变输入层数，将它
+# 变换为输出层数，这样才能将短接的x加上卷积计算的值
+extra = nn.Sequential()
+if ch_in != ch_out:
+    extra = nn.Sequential(nn.Conv2d(ch_in, ch_out, 1), nn.BatchNorm2d(ch_out))
+
+# 初始化输入向量
+x = torch.rand(1, 3, 32, 32)
+print('x shape:', x.shape)
+
+# 计算卷积的值
+out = conv1(x)
+out = bn1(out)
+out = torch.relu(out)
+x_shortcut = extra(x)
+out_res = x_shortcut + out  # 这里是重点，残差的算法在这里实现了
+
+# 对比残差是不是卷积的结果加上短接的效果
+print('out_res - out == x_shortcut的个数(总数是 5*32*32=5120):',
+      (out_res - out - x_shortcut < 1e-5).sum())
+```
+输出：
+```
+x shape: torch.Size([1, 3, 32, 32])
+out_res - out == x_shortcut的个数(总数是 5*32*32=5120): tensor(5120)
+```
 
 
 
