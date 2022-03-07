@@ -27,7 +27,8 @@ PyTorch学习笔记
 * [丢弃](#丢弃)
 * [卷积](#卷积)
 * [池化](#池化)
-* [Batch Normalization](#Batch Normalization)
+* [数据的标准化](#数据的标准化)
+  * [Batch Normalization](#batch-normalization)
 
 
 # 安装
@@ -1331,7 +1332,24 @@ Avg Pool: tensor([[[[0.2500, 0.5000],
 Avg Pool shpae: torch.Size([1, 1, 2, 2])
 ```
 
-# Batch Normalization
+
+# 数据的标准化
+对于2d卷积，各层的输入输出向量都是4维的，[batch_size, channel, H, W]
+## Batch Normalization
+Batch Normalization的做法是对每个channel，对所有batch size的数据求平均数（μ）和标准方差（σ），然后使用z-score进行归一化处理。
+![alt Z Score](./images/z-score.png)
+
+## Layer Normalization
+Layer Normalization的做法是对每个batch size，对所有channel的数据求平均数（μ）和标准方差（σ），然后使用z-score进行归一化处理。
+
+## Instance Normalization
+Instance Normalization的做法是对每个batch size、每个channel，对H*W的数据求平均数（μ）和标准方差（σ），然后使用z-score进行归一化处理。
+
+## Group Normalization
+Group Normalization的做法是对每个batch size、全部channel，对H*W的数据求平均数（μ）和标准方差（σ），然后使用z-score进行归一化处理。
+
+
+
 
 
 
