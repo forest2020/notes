@@ -33,6 +33,7 @@ PyTorch学习笔记
   * [Instance Normalization](#instance-normalization)
   * [Group Normalization](#group-normalization)
 * [实现残差网络单元](#实现残差网络单元)
+* [nn.Module](#nnmodule)
 
 
 # 安装
@@ -1437,6 +1438,32 @@ print('out_res - out == x_shortcut的个数(总数是 5*32*32=5120):',
 x shape: torch.Size([1, 3, 32, 32])
 out_res - out == x_shortcut的个数(总数是 5*32*32=5120): tensor(5120)
 ```
+
+# nn.Module
+nn.Module类是PyTorch中所有网络层（nn.Linear、nn.BatchNorm2d、nn.Conv2d等）以及网络层容器（nn.Sequential）的基类，它可以嵌套。    
+容器（例如nn.Sequential）基本用法是在构造函数中定义网络层，实例使用括号传入需要计算的数据，返回计算结果：
+```python
+import torch
+import torch.nn as nn
+
+# 定义一个计算网络
+net = nn.Sequential(nn.Conv2d(1, 3, 3, padding=1), nn.MaxPool2d(2, 2),
+                    nn.ReLU(True), nn.BatchNorm2d(3))
+
+# 定义输入数据,batch size是8，1个通道，64*64的特征图
+x = torch.rand(8, 1, 64, 64)
+print('输入 x shape:', x.shape)
+
+# 计算输出
+out = net(x)
+print('输入1个通道，经过容器计算后是3个通道,做了一个2*2池化，特征图从64*64缩小到32*32，应该得到[8,3,32,32]:', out.shape)
+```
+输出：
+```
+输入 x shape: torch.Size([8, 1, 64, 64])
+输入1个通道，经过容器计算后是3个通道,做了一个2*2池化，特征图从64*64缩小到32*32，应该得到[8,3,32,32]: torch.Size([8, 3, 32, 32])
+```
+
 
 
 
