@@ -18,7 +18,7 @@ PyTorch学习笔记
 * [损失和梯度计算](#损失和梯度计算)
 * [优化器](#优化器)
 * [Visdom可视化](#Visdom可视化)
-* [搭建一个简单的分类网络](#搭建一个简单的分类网络)
+* [搭建一个简单的全连接分类网络](#搭建一个简单的全连接分类网络)
 * [正则化Regularization](#正则化Regularization)
   * [范数](#范数)
   * [深度学习中的正则化](#深度学习中的正则化)
@@ -882,7 +882,7 @@ viz.line([[loss.item(),acc.item()]],[global_step],win='train1', update='append')
 ```
 
 
-# 搭建一个简单的分类网络
+# 搭建一个简单的全连接分类网络
 ```pthin
 import torch
 import torch.nn as nn
