@@ -38,6 +38,8 @@ PyTorch学习笔记
   * [自定义网络层方法](#自定义网络层方法)
   * [实现自己算法的方法](#实现自己算法的方法)
 * [模型的保存和加载](#模型的保存和加载)
+* [数据增强](#数据增强)
+
 
 
 # 安装
@@ -1646,6 +1648,9 @@ net.eval()
 # 保持训练好的网络参数
 torch.save(net.state_dict(), 'ckpt.mdl')
 ```
+
+# 数据增强
+PyTorch在torchvision.transforms中实现图像数据的增强，通过torchvision.transforms.Compose类构造顺序数据增强方法。
 
 
 
