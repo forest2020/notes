@@ -34,6 +34,10 @@ PyTorch学习笔记
   * [Group Normalization](#group-normalization)
 * [实现残差网络单元](#实现残差网络单元)
 * [nn.Module](#nnmodule)
+  * [基础用法](#基础用法)
+  * [自定义网络层方法](#自定义网络层方法)
+  * [实现自己算法的方法](#实现自己算法的方法)
+* [模型的保存和加载](#模型的保存和加载)
 
 
 # 安装
@@ -1440,6 +1444,7 @@ out_res - out == x_shortcut的个数(总数是 5*32*32=5120): tensor(5120)
 ```
 
 # nn.Module
+## 基础用法
 nn.Module类是PyTorch中所有网络层（nn.Linear、nn.BatchNorm2d、nn.Conv2d等）以及网络层容器（nn.Sequential）的基类，它可以嵌套。    
 容器（例如nn.Sequential）基本用法是在构造函数中定义网络层，实例使用括号传入需要计算的数据，返回计算结果：
 ```python
@@ -1457,12 +1462,191 @@ print('输入 x shape:', x.shape)
 # 计算输出
 out = net(x)
 print('输入1个通道，经过容器计算后是3个通道,做了一个2*2池化，特征图从64*64缩小到32*32，应该得到[8,3,32,32]:', out.shape)
+
+# 查看网络的网络层的参数
+print('网络层的参数，0、3层有参数，1、1层没有参数：', list(net.named_parameters()))
+
+# 查看容器的子模块
+print('容器的子模块：', net.children)
+print('容器的模块：', net.modules)
 ```
 输出：
 ```
 输入 x shape: torch.Size([8, 1, 64, 64])
 输入1个通道，经过容器计算后是3个通道,做了一个2*2池化，特征图从64*64缩小到32*32，应该得到[8,3,32,32]: torch.Size([8, 3, 32, 32])
+网络层的参数，0、3层有参数，1、1层没有参数： [('0.weight', Parameter containing:
+tensor([[[[-0.2995, -0.2259, -0.1732],
+          [ 0.2636,  0.0899,  0.2355],
+          [-0.0877,  0.0706, -0.0226]]],
+
+
+        [[[ 0.0620, -0.1392,  0.2703],
+          [-0.0258, -0.2457, -0.1618],
+          [ 0.0241, -0.1453, -0.2632]]],
+
+
+        [[[-0.0120, -0.0453,  0.1097],
+          [-0.0925, -0.1173, -0.0785],
+          [-0.1673,  0.0479,  0.2446]]]], requires_grad=True)), ('0.bias', Parameter containing:
+tensor([ 0.1125,  0.1130, -0.0745], requires_grad=True)), ('3.weight', Parameter containing:
+tensor([1., 1., 1.], requires_grad=True)), ('3.bias', Parameter containing:
+tensor([0., 0., 0.], requires_grad=True))]
+容器的子模块： <bound method Module.children of Sequential(
+  (0): Conv2d(1, 3, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+  (1): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+  (2): ReLU(inplace=True)
+  (3): BatchNorm2d(3, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+)>
+容器的模块： <bound method Module.modules of Sequential(
+  (0): Conv2d(1, 3, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+  (1): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+  (2): ReLU(inplace=True)
+  (3): BatchNorm2d(3, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+)>
 ```
+## 自定义网络层方法
+自定义一个拉直网络层
+```python
+import torch
+import torch.nn as nn
+
+
+class Flaten(nn.Module):
+    # 定义一个拉直网络层
+    def __init__(self):
+        super(Flaten, self).__init__()
+
+    def forward(self, input):
+        print('Flaten input shape:', input.shape)
+        return input.view(input.size(0), -1)
+
+
+class Net(nn.Module):
+    # 定义一个网络
+    def __init__(self):
+        super(Net, self).__init__()
+        self.net = nn.Sequential(nn.Conv2d(1, 16, 3, padding=1), nn.MaxPool2d(
+            2, 2), Flaten(), nn.Linear(16*14*15, 10))
+
+    def forward(self, x):
+        return self.net(x)
+
+
+# 定义网络输入，batch size=16，通道=1，H*W=28*30
+x = torch.rand(16, 1, 28, 30)
+print('input x shape:', x.shape)
+
+# 实例化网络对象
+net = Net()
+
+# 做一个次前向传播
+out = net(x)
+print('output shape:', out.shape)
+```
+输出：
+```
+input x shape: torch.Size([16, 1, 28, 30])
+Flaten input shape: torch.Size([16, 16, 14, 15])
+output shape: torch.Size([16, 10])
+```
+
+## 实现自己算法的方法
+关键点是使用nn.Parameter将自己算法的可训练参数放入到Module的Parameter中，以实现自动计算。网络层的参数加入到了nn.Parameter，就可以方便的统一加入到优化器中。
+```python
+import torch
+import torch.nn as nn
+
+
+class Flaten(nn.Module):
+    # 定义一个拉直网络层
+    def __init__(self):
+        super(Flaten, self).__init__()
+
+    def forward(self, input):
+        print('Flaten input shape:', input.shape)
+        return input.view(input.size(0), -1)
+
+
+class MyLinear(nn.Module):
+    # 定义自己算法的网络层
+    def __init__(self, in_channels: int, out_channels: int):
+        super(MyLinear, self).__init__()
+
+        # 定义权重和偏置，required_grad=True
+        # 这些参数要加入到Module的parameter中，以实现网络的自动计算
+        # 使用nn.Parameter在定义Tensor的时候就不需要加required_grad=True，自动会加上
+        self.w = nn.Parameter(torch.randn(out_channels, in_channels))
+        self.b = nn.Parameter(torch.randn(out_channels))
+
+    def forward(self, input):
+        return input @ self.w.T+self.b
+
+
+class Net(nn.Module):
+    # 定义一个网络
+    def __init__(self):
+        super(Net, self).__init__()
+        self.net = nn.Sequential(nn.Conv2d(1, 16, 3, padding=1), nn.MaxPool2d(
+            2, 2), Flaten(), MyLinear(16*14*15, 10))
+
+    def forward(self, x):
+        return self.net(x)
+
+
+# 定义网络输入，batch size=16，通道=1，H*W=28*30
+x = torch.rand(16, 1, 28, 30)
+print('input x shape:', x.shape)
+
+# 实例化网络对象
+net = Net()
+
+# 做一个次前向传播
+out = net(x)
+print('output shape:', out.shape)
+```
+ 输出：
+```
+input x shape: torch.Size([16, 1, 28, 30])
+Flaten input shape: torch.Size([16, 16, 14, 15])
+output shape: torch.Size([16, 10])
+```
+
+
+# 模型的保存和加载
+```python
+import torch
+import torch.nn as nn
+
+
+class Net(nn.Module):
+    # 定义网络
+    def __init__(self):
+        super(Net, self).__init__()
+        self.net = nn.Linear(4, 3)
+
+
+# 显卡设备
+device = torch.device('cuda')
+# 网络对象,Net类是从nn.Module派生的
+net = Net()
+# 将网络放入GPU，不需要像Tensor的to方法那样保存返回值，nn.Module的to返回还是本身，只是把内部的Tensor放入了GPU
+net.to(device)
+
+# 加载网络参数
+net.load_state_dict(torch.load('ckpt.mdl'))
+
+# 切换到训练状态
+net.train()
+# train...
+
+# 切换到评估状态
+net.eval()
+# test....
+
+# 保持训练好的网络参数
+torch.save(net.state_dict(), 'ckpt.mdl')
+```
+
 
 
 
