@@ -40,7 +40,7 @@ PyTorch学习笔记
 * [模型的保存和加载](#模型的保存和加载)
 * [数据增强](#数据增强)
 * [搭建一个简单的卷积分类网络](#搭建一个简单的卷积分类网络)
-* [RNN](#RNN)
+* [RNN](#rnn)
 
 
 
@@ -2041,7 +2041,79 @@ epoch 3, loss 0.8176620006561279, acc 0.7709
 可见ResNet18的效果明显好于Lenet5.
 
 # RNN
+一个单层的RNN
+
 ![alt RNN formula](./images/RNN_formula.jpg)
+
+```python
+import torch
+import torch.nn as nn
+
+# 词向量维度（feature len）：100， 计算向量维度（hidden len）：10
+rnn = nn.RNN(100, 10)
+# RNN层参数名字中，ih是Wxh权重和偏置，hh是Whh权重和偏置，l0表示第1层
+print('rnn paramters name:', rnn._parameters.keys())
+
+print(f'Wxh(weight_ih_l0) shape: {rnn.weight_ih_l0.shape}, Whh(weight_hh_l0) shape: {rnn.weight_hh_l0.shape}')
+print(f'Bxh(bias_ih_l0) shape: {rnn.bias_ih_l0.shape}, Bhh(bias_hh_l0) shape: {rnn.bias_hh_l0.shape}')
+
+# 进行一次计算，每句话有15个词，一个批次3句，词向量维度是100
+x = torch.rand(15, 3, 100)
+# rnn层的forward返回2个向量，第一个是每一个词的h，第二个是当最后一个词的h
+# 因此out的最后一个元素向量应该与h是同一个，相等
+out, h = rnn(x)
+# out应该有15个词的计算结果，每个结果是[句子数(batch size)：3,结果向量维度：10]
+print('out shape:', out.shape)
+# h是一次的结果，第一维是共有几个RNN层，这里是1，一共有一个计算结果
+print('h shape', h.shape)
+```
+输出：
+```
+rnn paramters name: odict_keys(['weight_ih_l0', 'weight_hh_l0', 'bias_ih_l0', 'bias_hh_l0'])
+Wxh(weight_ih_l0) shape: torch.Size([10, 100]), Whh(weight_hh_l0) shape: torch.Size([10, 10])
+Bxh(bias_ih_l0) shape: torch.Size([10]), Bhh(bias_hh_l0) shape: torch.Size([10])
+out shape: torch.Size([15, 3, 10])
+h shape torch.Size([1, 3, 10])
+```
+
+一个两层的RNN
+
+![alt RNN formula 2](./images/RNN_Formula2.jpg)
+
+```python
+import torch
+import torch.nn as nn
+
+# 词向量维度（feature len）：100， 计算向量维度（hidden len）：10
+rnn = nn.RNN(100, 10, num_layers=2)
+# RNN层参数名字中，ih是Wxh权重和偏置，hh是Whh权重和偏置，l0表示第1层
+print('rnn paramters name:', rnn._parameters.keys())
+
+print(f'Wxh0(weight_ih_l0) shape: {rnn.weight_ih_l0.shape}, Whh0(weight_hh_l0) shape: {rnn.weight_hh_l0.shape}')
+print(f'Wxh1(weight_ih_l1) shape: {rnn.weight_ih_l1.shape}, Whh1(weight_hh_l1) shape: {rnn.weight_hh_l1.shape}')
+print(f'Bxh0(bias_ih_l0) shape: {rnn.bias_ih_l0.shape}, Bhh0(bias_hh_l0) shape: {rnn.bias_hh_l0.shape}')
+print(f'Bxh1(bias_ih_l1) shape: {rnn.bias_ih_l1.shape}, Bhh1(bias_hh_l1) shape: {rnn.bias_hh_l1.shape}')
+
+# 进行一次计算，每句话有15个词，一个批次3句，词向量维度是100
+x = torch.rand(15, 3, 100)
+# rnn层的forward返回2个向量，第一个是每一个词的h，第二个是当最后一个词的h
+# 因此out的最后一个元素向量应该与h是同一个，相等
+out, h = rnn(x)
+# out应该有15个词的计算结果，每个结果是[句子数(batch size)：3,结果向量维度：10]
+print('out shape:', out.shape)
+# h是每层最后一次的结果，第一维是共有几个RNN层，这里是2，一共有一个计算结果
+print('h shape', h.shape)
+```
+输出：
+```
+rnn paramters name: odict_keys(['weight_ih_l0', 'weight_hh_l0', 'bias_ih_l0', 'bias_hh_l0', 'weight_ih_l1', 'weight_hh_l1', 'bias_ih_l1', 'bias_hh_l1'])
+Wxh0(weight_ih_l0) shape: torch.Size([10, 100]), Whh0(weight_hh_l0) shape: torch.Size([10, 10])
+Wxh1(weight_ih_l1) shape: torch.Size([10, 10]), Whh1(weight_hh_l1) shape: torch.Size([10, 10])
+Bxh0(bias_ih_l0) shape: torch.Size([10]), Bhh0(bias_hh_l0) shape: torch.Size([10])
+Bxh1(bias_ih_l1) shape: torch.Size([10]), Bhh1(bias_hh_l1) shape: torch.Size([10])
+out shape: torch.Size([15, 3, 10])
+h shape torch.Size([2, 3, 10])
+```
 
 
 
