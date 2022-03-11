@@ -2078,7 +2078,7 @@ h shape torch.Size([1, 3, 10])
 
 一个两层的RNN
 
-![alt RNN formula 2](./images/RNN_Formula2.jpg)
+![alt RNN formula 2](./images/RNN_formula2.jpg)
 
 ```python
 import torch
