@@ -39,6 +39,7 @@ PyTorch学习笔记
   * [实现自己算法的方法](#实现自己算法的方法)
 * [模型的保存和加载](#模型的保存和加载)
 * [数据增强](#数据增强)
+* [搭建一个简单的卷积分类网络](#搭建一个简单的卷积分类网络)
 
 
 
@@ -1651,6 +1652,198 @@ torch.save(net.state_dict(), 'ckpt.mdl')
 
 # 数据增强
 PyTorch在torchvision.transforms中实现图像数据的增强，通过torchvision.transforms.Compose类构造顺序数据增强方法。
+
+# 搭建一个简单的卷积分类网络
+main.py
+```python
+import torch
+from torch import nn, optim
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
+from lenet5 import Lenet5
+
+
+def main():
+    # 定义批大小
+    batch_size = 32
+    # 定义最大训练次数
+    max_epoch = 1000
+    # 定义学习率
+    learning_rate = 1e-3
+
+    # 打开训练集
+    cifar_train = datasets.CIFAR10(r'D:\lesson45\cifar10', True, transform=transforms.Compose([
+        transforms.Resize((32, 32)),
+        transforms.ToTensor()
+    ]), download=True)
+    # 加载训练集
+    cifar_train = DataLoader(cifar_train, batch_size=batch_size, shuffle=True)
+    # 打开测试集
+    cifar_test = datasets.CIFAR10(r'D:\lesson45\cifar10', False, transform=transforms.Compose([
+        transforms.Resize((32, 32)),
+        transforms.ToTensor()
+    ]), download=True)
+    cifar_test = DataLoader(cifar_test, batch_size=batch_size, shuffle=True)
+
+    # 显示数据集信息
+    x, label = iter(cifar_train).next()
+    print(
+        f'cifar10 dataset, input shape: {x.shape}, label shape: {label.shape}')
+
+    # 实例化模型
+    model = Lenet5()
+    print(model)
+
+    # 定义损失函数，使用交叉熵
+    criteria = nn.CrossEntropyLoss()
+
+    # 定义优化器，使用Adam
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+    # 开始训练
+    for epoch in range(max_epoch):
+        # 训练
+        model.train()
+        for batch_idx, (x, label) in enumerate(cifar_train):
+            # 得到网络输出, x: [b, 3, 32, 32] => [b, 10]
+            logits = model(x)
+            # 计算损失, logits：[b, 10]，label：[b]
+            loss = criteria(logits, label)
+            # 反向传输
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+        # 测试，告诉Torch不需要梯度计算，减少资源消耗
+        model.eval()
+        with torch.no_grad():
+            total_correct = 0
+            total_num = 0
+            for x, label in cifar_test:
+                # 得到网络输出
+                logits = model(x)
+                # 计算争取推断的数量，先取到每个batch上的最大数字所在的位置索引
+                # [b, 10] => [b]
+                pred = logits.argmax(dim=1)
+                # 与标签比较，并累加正确的数量
+                # 比如[2,1,1]与[2,2,0]比较后返回[1,0,0]，对应元素相等的返回1，不相等的返回0
+                total_correct += torch.eq(pred, label).float().sum().item()
+                # 记录总的测试样本数量
+                total_num += x.size(0)
+
+            print(
+                f'epoch {epoch}, loss {loss.item()}, acc {total_correct/total_num}')
+
+
+if __name__ == '__main__':
+    main()
+```
+lenet5.py
+```python
+import torch
+from torch import nn
+
+
+class Lenet5(nn.Module):
+    """
+    for cifar10 dataset
+    """
+
+    def __init__(self):
+        super(Lenet5, self).__init__()
+
+        # 定义卷积部分
+        self.conv_unit = nn.Sequential(
+            # x: [b, 3, 32, 32] => [b, 6, 28, 28]
+            nn.Conv2d(3, 6, 5, stride=1, padding=0),
+            # x: [b, 6, 28, 28] => [b, 6, 14, 14]
+            nn.AvgPool2d(2, 2, padding=0),
+            # x: [b, 6, 14, 14] => [b, 16, 10, 10]
+            nn.Conv2d(6, 16, 5, stride=1, padding=0),
+            # x: [b, 16, 10, 10] => [b, 16, 5, 5]
+            nn.AvgPool2d(2, 2, padding=0)
+        )
+
+        # 定义全连接部分
+        self.fc_unit = nn.Sequential(
+            # x: [b, 16*5*5] => [b, 120]
+            nn.Linear(400, 120),
+            nn.ReLU(),
+            # x: [b, 120] => [b, 84]
+            nn.Linear(120, 84),
+            nn.ReLU(),
+            # x: [b, 84] => [b, 10]
+            nn.Linear(84, 10)
+        )
+
+    def forward(self, x):
+        """
+        前向传播
+
+        Parameters
+        ----------
+        x : [b, 3, 32, 32]
+            输入的一个批次的数据
+
+        Returns
+        -------
+        [b, 10]
+
+        """
+        # x: [b, 3, 32, 32] => [b, 16, 5, 5]
+        x = self.conv_unit(x)
+        # x: [b, 16, 5, 5] => [b, 16*5*5]
+        x = x.view(x.size(0), -1)
+        # x: [b, 16*5*5] => [b, 10]
+        logits = self.fc_unit(x)
+        return logits
+
+
+def main():
+    """
+    测试代码
+    """
+    net = Lenet5()
+    print('Test Lenet5')
+
+    x = torch.randn(2, 3, 32, 32)
+    print('x shape:', x.shape)
+    out = net(x)
+    print('out shape:', out.shape)
+
+
+if __name__ == '__main__':
+    main()
+```
+输出：
+```
+Files already downloaded and verified
+Files already downloaded and verified
+cifar10 dataset, input shape: torch.Size([32, 3, 32, 32]), label shape: torch.Size([32])
+Lenet5(
+  (conv_unit): Sequential(
+    (0): Conv2d(3, 6, kernel_size=(5, 5), stride=(1, 1))
+    (1): AvgPool2d(kernel_size=2, stride=2, padding=0)
+    (2): Conv2d(6, 16, kernel_size=(5, 5), stride=(1, 1))
+    (3): AvgPool2d(kernel_size=2, stride=2, padding=0)
+  )
+  (fc_unit): Sequential(
+    (0): Linear(in_features=400, out_features=120, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=120, out_features=84, bias=True)
+    (3): ReLU()
+    (4): Linear(in_features=84, out_features=10, bias=True)
+  )
+)
+epoch 0, loss 1.6669647693634033, acc 0.4359
+epoch 1, loss 1.176088571548462, acc 0.489
+epoch 2, loss 1.5623339414596558, acc 0.5081
+epoch 3, loss 1.59151291847229, acc 0.5303
+epoch 4, loss 0.7905974984169006, acc 0.5349
+epoch 5, loss 1.1830155849456787, acc 0.5443
+```
+
+
 
 
 
