@@ -40,6 +40,7 @@ PyTorch学习笔记
 * [模型的保存和加载](#模型的保存和加载)
 * [数据增强](#数据增强)
 * [搭建一个简单的卷积分类网络](#搭建一个简单的卷积分类网络)
+* [RNN](#RNN)
 
 
 
@@ -1646,7 +1647,7 @@ net.train()
 net.eval()
 # test....
 
-# 保持训练好的网络参数
+# 保存训练好的网络参数
 torch.save(net.state_dict(), 'ckpt.mdl')
 ```
 
@@ -1661,6 +1662,7 @@ from torch import nn, optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 from lenet5 import Lenet5
+from resnet import ResNet18
 
 
 def main():
@@ -1674,14 +1676,20 @@ def main():
     # 打开训练集
     cifar_train = datasets.CIFAR10(r'D:\lesson45\cifar10', True, transform=transforms.Compose([
         transforms.Resize((32, 32)),
-        transforms.ToTensor()
+        transforms.ToTensor(),
+        # 增加RGB标准化，这个平均值和标准差是在ImageNet上统计的结果
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
     ]), download=True)
     # 加载训练集
     cifar_train = DataLoader(cifar_train, batch_size=batch_size, shuffle=True)
     # 打开测试集
     cifar_test = datasets.CIFAR10(r'D:\lesson45\cifar10', False, transform=transforms.Compose([
         transforms.Resize((32, 32)),
-        transforms.ToTensor()
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
+
     ]), download=True)
     cifar_test = DataLoader(cifar_test, batch_size=batch_size, shuffle=True)
 
@@ -1691,7 +1699,8 @@ def main():
         f'cifar10 dataset, input shape: {x.shape}, label shape: {label.shape}')
 
     # 实例化模型
-    model = Lenet5()
+    model = Lenet5
+    # model = ResNet18()
     print(model)
 
     # 定义损失函数，使用交叉熵
@@ -1835,13 +1844,205 @@ Lenet5(
     (4): Linear(in_features=84, out_features=10, bias=True)
   )
 )
-epoch 0, loss 1.6669647693634033, acc 0.4359
-epoch 1, loss 1.176088571548462, acc 0.489
-epoch 2, loss 1.5623339414596558, acc 0.5081
-epoch 3, loss 1.59151291847229, acc 0.5303
-epoch 4, loss 0.7905974984169006, acc 0.5349
-epoch 5, loss 1.1830155849456787, acc 0.5443
+epoch 0, loss 1.8438501358032227, acc 0.4782
+epoch 1, loss 1.275923728942871, acc 0.517
+epoch 2, loss 1.5104440450668335, acc 0.5232
 ```
+
+编写一个残差网络ResNet18代替Lenet5.   
+resnet.py
+```python
+import torch
+from torch import nn
+from torch.nn import functional as F
+
+
+class ResBlk(nn.Module):
+    """
+    残差单元
+    """
+
+    def __init__(self, in_channels: int, out_channels: int, stride=1):
+        """
+
+
+        Parameters
+        ----------
+        in_channels : int
+            输入通道数.
+        out_channels : int
+            输出通道数.
+        stride : int
+            第一层卷积的步长，作用是缩小特征图.
+
+        Returns
+        -------
+        None.
+
+        """
+        super(ResBlk, self).__init__()
+
+        self.conv1 = nn.Conv2d(in_channels, out_channels,
+                               3, stride=stride, padding=1)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.conv2 = nn.Conv2d(
+            out_channels, out_channels, 3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+
+        self.extra = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, 1, stride=stride, padding=0))
+
+    def forward(self, x):
+        """
+        前向传播
+
+        Parameters
+        ----------
+        x : [b, in_ch, H, W]
+            输入向量.
+
+        Returns
+        -------
+        [b, out_ch, H, W]
+
+        """
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = F.relu(self.bn2(self.conv2(out)))
+        out = out + self.extra(x)
+        return out
+
+
+class ResNet18(nn.Module):
+    """
+    残差网络
+    """
+
+    def __init__(self):
+        super(ResNet18, self).__init__()
+
+        # [b, 3, H, W] => [b, 64, H, W]
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(3, 64, 3, stride=1, padding=1), nn.BatchNorm2d(64))
+        # [b, 64, H, W] => [b, 128, H/2, W/2]
+        self.blk1 = ResBlk(64, 128, stride=2)
+        # [b, 128, H/2, W/2] => [b, 256, H/4, W/4]
+        self.blk2 = ResBlk(128, 256, stride=2)
+        # [b, 256, H/4, W/4] => [b, 512, H/8, W/8]
+        self.blk3 = ResBlk(256, 512, stride=2)
+        # [b, 512, H/8, W/8] => [b, 512, H/16, W/16]
+        self.blk4 = ResBlk(512, 512, stride=2)
+
+        # [b, 512*H/16*W/16] => [b, 10]
+        self.outlayer = nn.Linear(2048, 10)
+
+    def forward(self, x):
+        """
+        前向传播
+
+        Parameters
+        ----------
+        x : [b, in_ch, H, W]
+            DESCRIPTION.
+
+        Returns
+        -------
+        [b, out_ch, H, W]
+
+        """
+
+        # [b, in_ch, H, W] => [b, 64, H, W]
+        x = F.relu(self.conv1(x))
+
+        # [b, 64, H, W] => [b, 1024, H, W]
+        x = self.blk1(x)
+        x = self.blk2(x)
+        x = self.blk3(x)
+        x = self.blk4(x)
+
+        x = self.outlayer(x.view(x.size(0), -1))
+        return x
+
+
+def main():
+    """
+    单元测试
+
+    Returns
+    -------
+    None.
+
+    """
+
+    net = ResNet18()
+
+    x = torch.rand(32, 3, 32, 32)
+    print('input x shape:', x.shape)
+
+    out = net(x)
+    print('output shape:', out.shape)
+
+
+if __name__ == '__main__':
+    main()
+```
+输出：
+```
+Files already downloaded and verified
+Files already downloaded and verified
+cifar10 dataset, input shape: torch.Size([32, 3, 32, 32]), label shape: torch.Size([32])
+ResNet18(
+  (conv1): Sequential(
+    (0): Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (blk1): ResBlk(
+    (conv1): Conv2d(64, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+    (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (extra): Sequential(
+      (0): Conv2d(64, 128, kernel_size=(1, 1), stride=(2, 2))
+    )
+  )
+  (blk2): ResBlk(
+    (conv1): Conv2d(128, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+    (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (extra): Sequential(
+      (0): Conv2d(128, 256, kernel_size=(1, 1), stride=(2, 2))
+    )
+  )
+  (blk3): ResBlk(
+    (conv1): Conv2d(256, 512, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+    (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (extra): Sequential(
+      (0): Conv2d(256, 512, kernel_size=(1, 1), stride=(2, 2))
+    )
+  )
+  (blk4): ResBlk(
+    (conv1): Conv2d(512, 512, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+    (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (extra): Sequential(
+      (0): Conv2d(512, 512, kernel_size=(1, 1), stride=(2, 2))
+    )
+  )
+  (outlayer): Linear(in_features=2048, out_features=10, bias=True)
+)
+epoch 0, loss 1.8792897462844849, acc 0.6041
+epoch 1, loss 0.8214048743247986, acc 0.7065
+epoch 2, loss 0.171108216047287, acc 0.7554
+epoch 3, loss 0.8176620006561279, acc 0.7709
+```
+可见ResNet18的效果明显好于Lenet5.
+
+# RNN
+![alt RNN formula](./images/RNN_formula.jpg)
+
 
 
 
