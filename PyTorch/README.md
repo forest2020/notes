@@ -41,6 +41,7 @@ PyTorch学习笔记
 * [数据增强](#数据增强)
 * [搭建一个简单的卷积分类网络](#搭建一个简单的卷积分类网络)
 * [RNN](#rnn)
+* [时间序列预测](#时间序列预测)
 
 
 
@@ -2057,7 +2058,7 @@ print('rnn paramters name:', rnn._parameters.keys())
 print(f'Wxh(weight_ih_l0) shape: {rnn.weight_ih_l0.shape}, Whh(weight_hh_l0) shape: {rnn.weight_hh_l0.shape}')
 print(f'Bxh(bias_ih_l0) shape: {rnn.bias_ih_l0.shape}, Bhh(bias_hh_l0) shape: {rnn.bias_hh_l0.shape}')
 
-# 进行一次计算，每句话有15个词，一个批次3句，词向量维度是100
+# 进行一次计算，每句话有15个词，也就是序列（seq_len）的长度，一个批次3句，词向量维度是100
 x = torch.rand(15, 3, 100)
 # rnn层的forward返回2个向量，第一个是每一个词的h，第二个是当最后一个词的h
 # 因此out的最后一个元素向量应该与h是同一个，相等
@@ -2114,6 +2115,51 @@ Bxh1(bias_ih_l1) shape: torch.Size([10]), Bhh1(bias_hh_l1) shape: torch.Size([10
 out shape: torch.Size([15, 3, 10])
 h shape torch.Size([2, 3, 10])
 ```
+
+使用RNNCell手动循环一句话的所有词：
+```python
+import torch
+import torch.nn as nn
+
+# 定义一个RNN层，每个词用100维向量表示，经过计算后输出20维向量
+cell = nn.RNNCell(100, 20)
+
+# 定义历史结果保存向量，batch size是3，维度是RNNCell的输出，20
+h = torch.zeros(3, 20)
+
+# 输入数据，每句话最多由15个词组成，batch size是3，表示词的向量维度是100
+# 按顺序循环这个批次的所有词，累加结果h
+x = torch.rand(15, 3, 100)
+for word_idx in range(15):
+    h = cell(x[word_idx], h)
+
+print('h shape:', h.shape)
+
+# 定义一个2层的RNN，第一层输入词的维度是100，输出是30
+# 第二层的输入是来自与第一层的输出，因此输入维度必须是30，输出我们定为20
+cell1 = nn.RNNCell(100, 30)
+cell2 = nn.RNNCell(30, 20)
+
+# 每一层对应一个记忆，batch size是3
+h1 = torch.zeros(3, 30)
+h2 = torch.zeros(3, 20)
+
+# 按顺序循环所有词
+for word_idx in range(15):
+    h1 = cell1(x[word_idx], h1)
+    h2 = cell2(h1, h2)
+
+print('h1 shape:', h1.shape)
+print('h2 shape:', h2.shape)
+```
+输出：
+```
+h shape: torch.Size([3, 20])
+h1 shape: torch.Size([3, 30])
+h2 shape: torch.Size([3, 20])
+```
+
+# 时间序列预测
 
 
 
