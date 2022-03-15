@@ -2160,7 +2160,137 @@ h2 shape: torch.Size([3, 20])
 ```
 
 # 时间序列预测
+```python
+import torch
+import torch.nn as nn
+import numpy as np
+from matplotlib import pyplot as plt
 
+"""
+使用RNN预测一个正选曲线
+原理是这样的：
+
+"""
+
+# 定义超参数
+num_time_steps = 50
+input_size = 1
+hidden_size = 16
+output_size = 1
+lr = 0.01
+
+
+class Net(nn.Module):
+    """
+    曲线预测RNN网络
+    """
+
+    def __init__(self):
+        # 确保首先调用基类的初始化，否则后面网络层的参数无法被Module管理
+        super(Net, self).__init__()
+
+        self.rnn = nn.RNN(input_size, hidden_size,
+                          num_layers=1, batch_first=True)
+        for p in self.rnn.parameters():
+            if(p.dim() < 2):
+                continue
+            nn.init.kaiming_normal(p)
+
+        self.linear = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x, hidden_prev):
+        out, hidden_prev = self.rnn(x, hidden_prev)
+        # out to linear: [b,seq,h] => [b,seq*h]
+        out = out.view(-1, hidden_size*input_size)
+        out = self.linear(out)
+        # linear out to RNN out: [b,output_size] => [b,seq,h]
+        out = out.unsqueeze(dim=0)
+        return out, hidden_prev
+
+
+# 实例化模型
+model = Net()
+# 损失函数
+criteria = nn.MSELoss()
+# 优化器
+optimizer = torch.optim.Adam(model.parameters(), lr)
+
+# RNN记忆
+hidden_prev = torch.zeros([1, 1, hidden_size])
+
+# 开始训练
+for i in range(6000):
+    # 制作一个batch size是1的RNN输入和真实值数据
+    # 随机产生一段正选曲线的X、Y坐标，共50个点
+    # 随机找到一个开始点
+    start = np.random.randint(3, size=1)[0]
+    # 在范围10内生成等距的50个点，10大约是3个Pi，也就是3个周期多的正选曲线
+    time_steps = np.linspace(start, start+10, num_time_steps)
+    # 计算正选曲线的值
+    data = np.sin(time_steps)
+    data = data.reshape(num_time_steps, 1)
+    # 输入时间序列，从第0个开始，总数去掉一个，并整形为网络输入的向量，[batch size,seq len, 词向量长度]
+    x = torch.tensor(data[:-1]).float().view(1, num_time_steps-1, 1)
+    # 真实值时间序列，从第1个开始，总数去掉一个，这样这好比x晚一个时刻，x的n时刻计算后的真实值是n+1时刻
+    y = torch.tensor(data[1:]).float().view(1, num_time_steps-1, 1)
+
+    # 放入网络计算
+    output, hidden_prev = model(x, hidden_prev)
+    # 从计算图中脱离出来，下个循环要作为没有梯度关联的向量作为网络的输入
+    hidden_prev = hidden_prev.detach()
+
+    # 计算损失
+    loss = criteria(output, y)
+    # 优化网络参数
+    optimizer.zero_grad()
+    loss.backward()
+    # 对梯度的最大值做限制，防止梯度爆炸
+    nn.utils.clip_grad_norm_(model.parameters(), 10)
+    optimizer.step()
+
+    if i % 100 == 0:
+        print(f'Iteration: {i}, loss {loss}')
+
+# 使用训练好的网络预测曲线
+# 随机产生一段正选曲线的X、Y坐标，共50个点
+start = 5  # np.random.randint(3, size=1)[0]
+time_steps = np.linspace(start, start+10, num_time_steps)
+data = np.sin(time_steps)
+data = data.reshape(num_time_steps, 1)
+x = torch.tensor(data[:-1]).float().view(1, num_time_steps-1, 1)
+
+# 预测值列表
+predictions = []
+# 取曲线上的第一点作为输入，让网络预测之后的点
+with torch.no_grad():
+    input = x[:, 0, :].view(1, 1, 1)  # 第1位取一个后会使向量从三维降到2维，取1个元素的维度被消掉了，因此要增加回来
+    hidden_prev = torch.zeros([1, 1, hidden_size])
+    for _ in range(x.shape[1]):
+        pred, hidden_prev = model(input, hidden_prev)
+        input = pred
+        predictions.append(pred.detach().numpy().ravel()[0])
+
+
+# 显示实际曲线和预测曲线
+x = x.data.numpy().ravel()
+plt.scatter(time_steps[:-1], x, s=90)
+plt.plot(time_steps[:-1], x)
+
+plt.scatter(time_steps[1:], predictions)
+plt.show()
+```
+输出：
+```
+nn.init.kaiming_normal_.
+  nn.init.kaiming_normal(p)
+Iteration: 0, loss 0.13890255987644196
+Iteration: 100, loss 0.002004752866923809
+Iteration: 200, loss 0.0007773848483338952
+Iteration: 300, loss 0.0010097427293658257
+Iteration: 400, loss 0.00025156346964649856
+```
+
+![alt RNN sin](./images/RNN-sin.png)
 
 
 
