@@ -2167,9 +2167,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 """
-使用RNN预测一个正选曲线
-原理是这样的：
-
+使用RNN预测一个正选曲线。
 """
 
 # 定义超参数
@@ -2288,10 +2286,11 @@ Iteration: 100, loss 0.002004752866923809
 Iteration: 200, loss 0.0007773848483338952
 Iteration: 300, loss 0.0010097427293658257
 Iteration: 400, loss 0.00025156346964649856
+...
 ```
 
-![alt RNN sin](./images/RNN-sin.png)
-
+![alt RNN sin](./images/RNN-sin.png)    
+&emsp; &emsp; &emsp; &emsp; 真实曲线 -- 蓝色，预测曲线 -- 橙色
 
 
 
