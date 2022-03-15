@@ -2167,7 +2167,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 """
-使用RNN预测一个正选曲线。
+使用RNN预测一个正选曲线
+原理是这样的：
+
 """
 
 # 定义超参数
@@ -2213,8 +2215,6 @@ criteria = nn.MSELoss()
 # 优化器
 optimizer = torch.optim.Adam(model.parameters(), lr)
 
-# RNN记忆
-hidden_prev = torch.zeros([1, 1, hidden_size])
 
 # 开始训练
 for i in range(6000):
@@ -2231,6 +2231,9 @@ for i in range(6000):
     x = torch.tensor(data[:-1]).float().view(1, num_time_steps-1, 1)
     # 真实值时间序列，从第1个开始，总数去掉一个，这样这好比x晚一个时刻，x的n时刻计算后的真实值是n+1时刻
     y = torch.tensor(data[1:]).float().view(1, num_time_steps-1, 1)
+
+    # RNN记忆
+    hidden_prev = torch.zeros([1, 1, hidden_size])
 
     # 放入网络计算
     output, hidden_prev = model(x, hidden_prev)
@@ -2251,7 +2254,7 @@ for i in range(6000):
 
 # 使用训练好的网络预测曲线
 # 随机产生一段正选曲线的X、Y坐标，共50个点
-start = 5  # np.random.randint(3, size=1)[0]
+start = np.random.randint(3, size=1)[0]
 time_steps = np.linspace(start, start+10, num_time_steps)
 data = np.sin(time_steps)
 data = data.reshape(num_time_steps, 1)
