@@ -2359,7 +2359,8 @@ h shape: torch.Size([3, 4, 12])
 c shape: torch.Size([3, 4, 12])
 ```
 
-LSTMCell，LSTM底层单元，没有自动循环序列功能。    
+LSTMCell，LSTM底层单元，没有自动循环序列功能。       
+![alt LSTMCell Formula](./images/LSTMCell_formula.png)    
 对于一个1层的网络：
 ```python
 import torch
