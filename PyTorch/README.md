@@ -42,6 +42,7 @@ PyTorch学习笔记
 * [搭建一个简单的卷积分类网络](#搭建一个简单的卷积分类网络)
 * [RNN](#rnn)
 * [时间序列预测](#时间序列预测)
+* [LSTM](#lstm)
 
 
 
@@ -2294,6 +2295,71 @@ Iteration: 400, loss 0.00025156346964649856
 
 ![alt RNN sin](./images/RNN-sin.png)    
 &emsp; &emsp; &emsp; &emsp; 真实曲线 -- 蓝色，预测曲线 -- 橙色
+
+# LSTM
+![alt LSTM Formula](./images/LSTM_formula.png)
+```python
+import torch
+import torch.nn as nn
+
+# 定义一个3层的LSTM，输入是100维向量，输出是12维向量
+# 对于权重和偏置，第1层输入是100维，输出是4*12=48维
+# 3个门+1个输入=4，参见公式，把这些参数矩阵连接到了一起
+lstm = nn.LSTM(100, 12, num_layers=3)
+print('LSTM parameters names:', lstm._parameters.keys())
+print('--------------')
+print('weight_ih_l0 shape: ', lstm.weight_ih_l0.shape)
+print('bias_ih_l0 shape: ', lstm.bias_ih_l0.shape)
+print('weight_hh_l0 shape: ', lstm.weight_hh_l0.shape)
+print('bias_hh_l0 shape: ', lstm.bias_hh_l0.shape)
+print('--------------')
+print('weight_ih_l1 shape: ', lstm.weight_ih_l1.shape)
+print('bias_ih_l1 shape: ', lstm.bias_ih_l1.shape)
+print('weight_hh_l1 shape: ', lstm.weight_hh_l1.shape)
+print('bias_hh_l1 shape: ', lstm.bias_hh_l1.shape)
+print('--------------')
+print('weight_ih_l2 shape: ', lstm.weight_ih_l2.shape)
+print('bias_ih_l2 shape: ', lstm.bias_ih_l2.shape)
+print('weight_hh_l2 shape: ', lstm.weight_hh_l2.shape)
+print('bias_hh_l2 shape: ', lstm.bias_hh_l2.shape)
+
+# 定义输入，序列长度是10，批次是3，词向量维度是100
+x = torch.rand(10, 4, 100)
+# 计算输出，lstm需要输入3个向量，样本x，后面是上一时刻的记忆h和词状态c
+# 输出的是每个序列的结果向量和最后时刻的记忆和和词状态c
+out, (h, c) = lstm(x)
+print('*************')
+# out第1维是序列长度10，第2维是批次4，第3维是结果向量长度12
+print('out shape:', out.shape)
+# h和c维度一样，第1维是网络层数3，第2维是批次4，第3维是结果向量长度12
+print('h shape:', h.shape)
+print('c shape:', c.shape)
+```
+输出：
+```
+LSTM parameters names: odict_keys(['weight_ih_l0', 'weight_hh_l0', 'bias_ih_l0', 'bias_hh_l0', 'weight_ih_l1', 'weight_hh_l1', 'bias_ih_l1', 'bias_hh_l1', 'weight_ih_l2', 'weight_hh_l2', 'bias_ih_l2', 'bias_hh_l2'])
+--------------
+weight_ih_l0 shape:  torch.Size([48, 100])
+bias_ih_l0 shape:  torch.Size([48])
+weight_hh_l0 shape:  torch.Size([48, 12])
+bias_hh_l0 shape:  torch.Size([48])
+--------------
+weight_ih_l1 shape:  torch.Size([48, 12])
+bias_ih_l1 shape:  torch.Size([48])
+weight_hh_l1 shape:  torch.Size([48, 12])
+bias_hh_l1 shape:  torch.Size([48])
+--------------
+weight_ih_l2 shape:  torch.Size([48, 12])
+bias_ih_l2 shape:  torch.Size([48])
+weight_hh_l2 shape:  torch.Size([48, 12])
+bias_hh_l2 shape:  torch.Size([48])
+*************
+out shape: torch.Size([10, 4, 12])
+h shape: torch.Size([3, 4, 12])
+c shape: torch.Size([3, 4, 12])
+```
+
+
 
 
 
