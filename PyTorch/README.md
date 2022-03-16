@@ -2464,6 +2464,10 @@ h2 shape: torch.Size([3, 12])
 c2 shape: torch.Size([3, 12])
 ```
 
+双向LSTM，nn.LSTM的参数bidirectional设置为True时，代表使用双向LSTM（Bi-directional LSTM），网络如下图：    
+![alt Bi-directional LSTM](./images/Bi-directional_LSTM.jpg)    
+双向LSTM包含Forward层和Backward层，共同链接着输出层，其中包含了6个共享权值w1-w6。在Forward层从1时刻到t时刻正向计算一遍，获得并保存每一个时刻向前隐含层的输出。在Backward层沿着时刻t到时刻1反向计算一遍，获得并保存每一个时刻向后隐含层的输出。最后在每一个时刻结合Forward层和Backward层的相应时刻输出的结果获得最终的输出，用数学表达式以下：    
+![alt Bi-directional LSTM formula](./images/Bi-directional_LSTM_formula.jpg)    
 
 
 
