@@ -2359,6 +2359,112 @@ h shape: torch.Size([3, 4, 12])
 c shape: torch.Size([3, 4, 12])
 ```
 
+LSTMCell，LSTM底层单元，没有自动循环序列功能。    
+对于一个1层的网络：
+```python
+import torch
+import torch.nn as nn
+
+# 定义一个LSTM底层单元，输入100维向量，输出12维向量
+# 对于权重和偏置，维度大小计算与nn.LSTM一样
+cell = nn.LSTMCell(100, 12)
+print('cell parameters names:', cell._parameters.keys())
+print('------------')
+print('weight_ih shape:', cell.weight_ih.shape)
+print('bias_ih shape:', cell.bias_ih.shape)
+print('weight_hh shape:', cell.weight_hh.shape)
+print('bias_hh shape:', cell.bias_hh.shape)
+
+# 定义单元的记忆和词状态，假设都是0，批次是3，维度是12
+h0 = torch.zeros(3, 12)
+c0 = torch.zeros(3, 12)
+# 定义网络输入，批次是3，词向量维度是100，单元每次计算一个时刻的数据，因此就没有了序列长度维度
+x = torch.rand(3, 100)
+# 单元输入当前时刻的数据和上一时刻网络的记忆h及词状态c，输出当前时刻的网络的记忆h及词状态c
+h, c = cell(x, [h0, c0])
+print('************')
+print('h shape:', h.shape)
+print('c shape:', c.shape)
+```
+输出：
+```
+cell parameters names: odict_keys(['weight_ih', 'weight_hh', 'bias_ih', 'bias_hh'])
+------------
+weight_ih shape: torch.Size([48, 100])
+bias_ih shape: torch.Size([48])
+weight_hh shape: torch.Size([48, 12])
+bias_hh shape: torch.Size([48])
+************
+h shape: torch.Size([3, 12])
+c shape: torch.Size([3, 12])
+```
+
+对于一个2层的网络：
+```python
+import torch
+import torch.nn as nn
+
+# 定义2个LSTM底层单元，输入100维向量，输出12维向量
+# 对于权重和偏置，维度大小计算与nn.LSTM一样
+cell1 = nn.LSTMCell(100, 30)
+cell2 = nn.LSTMCell(30, 12)
+print('cell1 parameters names:', cell1._parameters.keys())
+print('cell2 parameters names:', cell1._parameters.keys())
+print('------ cell1 ------')
+print('weight_ih shape:', cell1.weight_ih.shape)
+print('bias_ih shape:', cell1.bias_ih.shape)
+print('weight_hh shape:', cell1.weight_hh.shape)
+print('bias_hh shape:', cell1.bias_hh.shape)
+print('------ cell2 ------')
+print('weight_ih shape:', cell2.weight_ih.shape)
+print('bias_ih shape:', cell2.bias_ih.shape)
+print('weight_hh shape:', cell2.weight_hh.shape)
+print('bias_hh shape:', cell2.bias_hh.shape)
+
+# 定义单元的记忆和词状态，假设都是0，批次是3，维度是12
+h1 = torch.zeros(3, 30)
+c1 = torch.zeros(3, 30)
+h2 = torch.zeros(3, 12)
+c2 = torch.zeros(3, 12)
+# 定义网络输入，批次是3，词向量维度是100，单元每次计算一个时刻的数据，因此就没有了序列长度维度
+x = torch.rand(3, 100)
+# 单元1输入当前时刻的x数据和上一时刻网络的记忆h1及词状态c1，输出当前时刻的网络的记忆h1及词状态c1
+h1, c1 = cell1(x, [h1, c1])
+# 单元2输入当前时刻的h1数据和上一时刻网络的记忆h2及词状态c2，输出当前时刻的网络的记忆h2及词状态c2
+h2, c2 = cell2(h1, [h2, c2])
+print('************')
+print('------ cell1 ------')
+print('h1 shape:', h1.shape)
+print('c1 shape:', c1.shape)
+print('------ cell2 ------')
+print('h2 shape:', h2.shape)
+print('c2 shape:', c2.shape)
+```
+输出：
+```
+cell1 parameters names: odict_keys(['weight_ih', 'weight_hh', 'bias_ih', 'bias_hh'])
+cell2 parameters names: odict_keys(['weight_ih', 'weight_hh', 'bias_ih', 'bias_hh'])
+------ cell1 ------
+weight_ih shape: torch.Size([120, 100])
+bias_ih shape: torch.Size([120])
+weight_hh shape: torch.Size([120, 30])
+bias_hh shape: torch.Size([120])
+------ cell2 ------
+weight_ih shape: torch.Size([48, 30])
+bias_ih shape: torch.Size([48])
+weight_hh shape: torch.Size([48, 12])
+bias_hh shape: torch.Size([48])
+************
+------ cell1 ------
+h1 shape: torch.Size([3, 30])
+c1 shape: torch.Size([3, 30])
+------ cell2 ------
+h2 shape: torch.Size([3, 12])
+c2 shape: torch.Size([3, 12])
+```
+
+
+
 
 
 
