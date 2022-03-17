@@ -43,6 +43,7 @@ PyTorch学习笔记
 * [RNN](#rnn)
 * [时间序列预测](#时间序列预测)
 * [LSTM](#lstm)
+* [数据集的加载](#数据集的加载)
 
 
 
@@ -2468,6 +2469,80 @@ c2 shape: torch.Size([3, 12])
 ![alt Bi-directional LSTM](./images/Bi-directional_LSTM.jpg)    
 双向LSTM包含Forward层和Backward层，共同链接着输出层，其中包含了6个共享权值w1-w6。在Forward层从1时刻到t时刻正向计算一遍，获得并保存每一个时刻向前隐含层的输出。在Backward层沿着时刻t到时刻1反向计算一遍，获得并保存每一个时刻向后隐含层的输出。最后在每一个时刻结合Forward层和Backward层的相应时刻输出的结果获得最终的输出，用数学表达式以下：    
 ![alt Bi-directional LSTM formula](./images/Bi-directional_LSTM_formula.jpg)    
+
+
+# 数据集的加载
+从torch.utils.data.Dataset派生数据集加载类，实现 __len__ 和 __getitem__ 方法，__len__ 返回数据集中样本的数量，__getitem__ 返回一个样本的数据。
+```python
+from torch.utils.data import Dataset, DataLoader
+import numpy as np
+
+
+class NumbersDataset(Dataset):
+    """
+    数据集示例，展示原理
+    """
+
+    def __init__(self, training=True):
+        super(NumbersDataset, self).__init__()
+
+        if training:
+            self.samples = np.arange(1, 101)
+        else:
+            self.samples = np.arange(101, 151)
+
+    def __len__(self):
+        """
+        重写获取样本总数方法
+
+        Returns
+        -------
+        int
+            样本总数.
+
+        """
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        """
+        获取一个样本
+
+        Parameters
+        ----------
+        idx : int
+            样本的索引号.
+
+        Returns
+        -------
+        int
+            样本数据.
+
+        """
+        return self.samples[idx]
+
+
+# 实例化数据集
+dataset = NumbersDataset()
+train_loader = DataLoader(dataset, batch_size=32, shuffle=True)
+
+# 训练网络
+for batch_idx, data in enumerate(train_loader):
+    print(f'batch_idex {batch_idx}, data: {data}')
+```
+输出：
+```
+batch_idex 0, data: tensor([ 63,  65,  31,   3,  53,  70,  51,  75,  48,  27,  62,  39, 100,  79,
+         78,  32,  58,  55,  93,  12,  25,  56,   8,  50,  17,  24,  49,  47,
+         37,   5,  29,  88], dtype=torch.int32)
+batch_idex 1, data: tensor([ 1, 81, 23, 97, 85, 28, 36,  2,  6, 26,  4, 13, 11, 64, 42, 43, 66, 76,
+        90, 89,  7, 21, 46, 67, 92, 99,  9, 83, 34, 87, 10, 22],
+       dtype=torch.int32)
+batch_idex 2, data: tensor([19, 16, 71, 82, 30, 73, 68, 98, 95, 74, 35, 20, 94, 59, 41, 57, 84, 86,
+        69, 91, 33, 44, 52, 45, 14, 60, 72, 15, 18, 77, 38, 61],
+       dtype=torch.int32)
+batch_idex 3, data: tensor([40, 54, 80, 96], dtype=torch.int32)
+```
+
 
 
 
