@@ -2472,7 +2472,8 @@ c2 shape: torch.Size([3, 12])
 
 
 # 数据集的加载
-从torch.utils.data.Dataset派生数据集加载类，实现 __len__ 和 __getitem__ 方法，__len__ 返回数据集中样本的数量，__getitem__ 返回一个样本的数据。
+从torch.utils.data.Dataset派生数据集加载类，实现 __len__ 和 __getitem__ 方法，__len__ 返回数据集中样本的数量，__getitem__ 返回一个样本的数据。    
+展示原理的一个示例：
 ```python
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
@@ -2541,6 +2542,123 @@ batch_idex 2, data: tensor([19, 16, 71, 82, 30, 73, 68, 98, 95, 74, 35, 20, 94, 
         69, 91, 33, 44, 52, 45, 14, 60, 72, 15, 18, 77, 38, 61],
        dtype=torch.int32)
 batch_idex 3, data: tensor([40, 54, 80, 96], dtype=torch.int32)
+```
+
+从磁盘加载图片示例：
+```python
+import os
+import glob
+from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms
+from PIL import Image
+
+
+class DiskImageDataset(Dataset):
+    """
+    从磁盘加载图片数据集示例
+    """
+
+    def __init__(self, root, resize):
+        """
+        构造函数
+
+        Parameters
+        ----------
+        root : string
+            数据集的磁盘文件夹.
+        resize : int or tuple(H, W)
+            输入一个数字原图保持比例，短边缩小指定大小；如果图像的高宽将拉伸缩小到指定宽高.
+
+        Returns
+        -------
+        None.
+
+        """
+        super(DiskImageDataset, self).__init__()
+
+        self.root = root
+        self.resize = resize
+
+        # 创建名字映射到标签的字典
+        # root下文件夹名字作为名字（name），按字符排序后的名字从0开始的索引号作为label
+        names = [n for n in os.listdir(
+            root) if os.path.isdir(os.path.join(root, n))]
+        names.sort()
+        self.name2label = {names[i]: i for i in range(len(names))}
+        print(f'Dataset {root}, name:label: {self.name2label}')
+
+        # 建立文件路径和标签列表
+        print(f'----------- Dataset({root}) Description -----------')
+        self.samples = []
+        prev_count = 0
+        for name in self.name2label.keys():
+            self.samples.extend([(p, self.name2label[name])
+                                for p in glob.glob(os.path.join(root, name, '*.jpg'))])
+            print(f'{name}({self.name2label[name]}):', len(
+                self.samples)-prev_count)
+            prev_count = len(self.samples)
+        print('Total number of Images:', len(self.samples))
+
+    def __len__(self):
+        """
+        重写获取样本总数方法
+
+        Returns
+        -------
+        int
+            样本总数.
+
+        """
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        """
+        获取一个样本
+
+        Parameters
+        ----------
+        idx : int
+            样本的索引号.
+
+        Returns
+        -------
+        bytes,int
+            样本数据和标签.
+
+        """
+
+        # 读取图片的路径和标签
+        path, label = self.samples[idx]
+        # 创建一个transform
+        tf = transforms.Compose([
+            lambda x:Image.open(x).convert('RGB'),  # 打开图片，转换成RGB格式
+            transforms.Resize(self.resize),
+            transforms.ToTensor()
+        ])
+
+        return tf(path), label
+
+
+# 实例化数据集
+dataset = DiskImageDataset(r'd:\images', (32, 32))
+# 数据加载器，dataset不一定是batch size的整数倍，避免最后一个batch不全，将drop_last
+train_loader = DataLoader(dataset, batch_size=32, shuffle=True, drop_last=True)
+
+# 训练网络
+for batch_idx, data in enumerate(train_loader):
+    print(
+        f'batch_idex {batch_idx}, data X shape: {data[0].shape}, data Y shape: {data[1].shape}')
+```
+输出：
+```
+Dataset d:\images, name:label: {'其它': 0, '狗': 1, '猫': 2, '老虎': 3}
+----------- Dataset(d:\images) Description -----------
+其它(0): 7
+狗(1): 10
+猫(2): 10
+老虎(3): 10
+Total number of Images: 37
+batch_idex 0, data X shape: torch.Size([32, 3, 32, 32]), data Y shape: torch.Size([32])
 ```
 
 
