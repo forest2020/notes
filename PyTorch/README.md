@@ -2683,7 +2683,7 @@ class DiskImageDataset(Dataset):
 dataset = DiskImageDataset(r'd:\images', (64, 64))
 
 # ptorch已经实现了标准磁盘目录数据集的加载类，根目录下面一个文件夹是一个类别的图片
-# tf是一个创建一个transform，参见DiskImageDataset中的定义方式
+# tf是一个transform，参见DiskImageDataset中的定义方式
 #dataset = torchvision.datasets.ImageFolder(r'd:\images',transform=tf)
 # 通过class_to_idx成员查看自动生成数据集的类别和索引的对应关系
 #print('label vs index:', dataset.class_to_idx)
