@@ -44,6 +44,7 @@ PyTorch学习笔记
 * [LSTM](#lstm)
 * [数据集的加载](#数据集的加载)
 * [保存模型和早停](#保存模型和早停)
+* [迁移学习](#迁移学习)
 
 
 
@@ -2749,6 +2750,21 @@ model.load_state_dict(torch.load('best.mdl'))
 
 # 在测试集上测试...
 ```
+
+# 迁移学习
+```python
+from torchvision.models import resnet18
+from torch import nn
+
+# 加载预训练的模型
+trained_model = resnet18(pretrained=True)
+# 创建自己的网络，使用预训练的模型的卷积层，去掉后面的全连接
+model = nn.Sequential(*list(trained_model.children()[:-1]),
+                      Flatten(),
+                      nn.Linear(in_features, out_features)
+                      )
+```
+
 
 
 
