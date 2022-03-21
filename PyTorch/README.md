@@ -23,7 +23,6 @@ PyTorch学习笔记
   * [范数](#范数)
   * [深度学习中的正则化](#深度学习中的正则化)
 * [学习率](#学习率)
-* [早停](#早停)
 * [丢弃](#丢弃)
 * [卷积](#卷积)
 * [池化](#池化)
@@ -44,6 +43,7 @@ PyTorch学习笔记
 * [时间序列预测](#时间序列预测)
 * [LSTM](#lstm)
 * [数据集的加载](#数据集的加载)
+* [保存模型和早停](#保存模型和早停)
 
 
 
@@ -1170,8 +1170,6 @@ for epoch in range(100):
 ```
 
 
-# 早停
-早停(Early Stopping),训练过程中保存验证集性能最好的模型参数，当在指定的epoch后验证集性能不在提升，停止训练。早停可以防止过拟合，同时可以尽早的结束训练，避免无意义的时间和算力的浪费。注意，验证集的性能曲线未必是单调增的，早停的设置需要经验尝试，避免局部性能曲线下降错误的停止训练，导致无法得到最佳性能的模型。
 
 # 丢弃
 丢弃（Dropout），随机丢掉一些神经元，相当于将神经元的输出置为0，这样可以防止模型过拟合。
@@ -2722,6 +2720,37 @@ Dataset d:\images, name:label: {'其它': 0, '狗': 1, '猫': 2, '老虎': 3}
 Total number of Images: 37
 batch_idex 0, data X shape: torch.Size([32, 3, 32, 32]), data Y shape: torch.Size([32])
 ```
+
+# 保存模型和早停
+```python
+# 训练模型
+best_acc = 0
+best_epoch = 0
+patience_epochs = 10
+for epoch in range(epochs):
+    # train ...
+
+    # evalute
+    acc = evalute()
+    if acc > best_acc:
+        best_acc = acc
+        best_epoch = epoch
+
+        # 保存最好的模型到硬盘mdl文件
+        torch.save(model.state_dict(), 'best.mdl')
+
+    # 早停，大于设置的最大epoch后，模型性能没有增加，停止训练
+    if epoch - best_epoch > patience_epochs:
+        break
+
+
+# 测试模型
+model.load_state_dict(torch.load('best.mdl'))
+
+# 在测试集上测试...
+```
+
+
 
 
 
