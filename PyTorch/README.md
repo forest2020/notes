@@ -2548,10 +2548,12 @@ batch_idex 3, data: tensor([40, 54, 80, 96], dtype=torch.int32)
 ```python
 import os
 import glob
+import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
 from matplotlib import pyplot as plt
+from visdom import Visdom
 
 
 class DiskImageDataset(Dataset):
@@ -2634,25 +2636,76 @@ class DiskImageDataset(Dataset):
         # 创建一个transform
         tf = transforms.Compose([
             lambda x:Image.open(x).convert('RGB'),  # 打开图片，转换成RGB格式
-            transforms.Resize(self.resize),
-            transforms.ToTensor()
+            # 为了数据选择后中心裁剪不出现填充的黑边，先得放大一下
+            transforms.Resize(
+                (int(self.resize[0]*1.1), int(self.resize[1]*1.1))),
+            transforms.RandomRotation(15),  # 数据集增强，随机旋转
+            transforms.CenterCrop(self.resize),  # 中心裁剪，去掉旋转的黑边
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[
+                                 0.229, 0.224, 0.225])
+            # 一般需要对图像做一个正则化，这个均值和方差是ImageNet的统计结果
         ])
 
         return tf(path), label
 
+    def denormalize(self, x_hat):
+        """
+        将正则化的图像还原成原图
+
+        Parameters
+        ----------
+        x_hat : [C_hat, H_hat, W_hat]
+            正则化后的图像数据.
+
+        Returns
+        -------
+        x : [C, H, W]
+            还原后的图像数据.
+
+        """
+        # [R, G, G]
+        mean = [0.485, 0.456, 0.406]
+        std = [0.229, 0.224, 0.225]
+
+        # x_hat=(x-mean)/std
+        # x=x_hat*std+mean
+        # x: [C, H, W]
+        # 为了可以与通过广播与x计算，需要将mean和std调整维度: [3] => [3,1,1]
+        mean = torch.tensor(mean).unsqueeze(1).unsqueeze(1)
+        std = torch.tensor(std).unsqueeze(1).unsqueeze(1)
+
+        x = x_hat*std+mean
+        return x
+
 
 # 实例化数据集
-dataset = DiskImageDataset(r'd:\images', (32, 32))
+dataset = DiskImageDataset(r'd:\images', (64, 64))
+
+# ptorch已经实现了标准磁盘目录数据集的加载类，根目录下面一个文件夹是一个类别的图片
+# tf是一个创建一个transform，参见DiskImageDataset中的定义方式
+#dataset = torchvision.datasets.ImageFolder(r'd:\images',transform=tf)
+
 # 数据加载器，dataset不一定是batch size的整数倍，避免最后一个batch不全，将drop_last
 train_loader = DataLoader(dataset, batch_size=32, shuffle=True, drop_last=True)
+
+# 可视化客户端
+viz = Visdom()
 
 # 训练网络
 for batch_idx, data in enumerate(train_loader):
     print(
         f'batch_idex {batch_idx}, data X shape: {data[0].shape}, data Y shape: {data[1].shape}')
+    # 将图像显示出来，验证数据集中图像数据的正确性
+    # 验证很重要，首先要保证给网络数据的正确性，才能谈到训练网络，才可能得到效果
+    # 第一种验证方法，使用matplotlib显示一张图片，这种方法只能看一个batch的一个数据，不推荐
     plt.figure()
     plt.imshow(
-        ((data[0][0].detach().numpy()*255).astype(int)).transpose(1, 2, 0))
+        ((dataset.denormalize(data[0][0].detach()).numpy()*255).astype(int)).transpose(1, 2, 0))
+    # 第二种方法，使用Visdom服务，显示一个batch的图片和标签，充分验证数据的正确性
+    viz.images(dataset.denormalize(
+        data[0]), nrow=8, win='batch', opts={'title': 'batch'})
+    viz.text(str(data[1].numpy()), win='label')
 ```
 输出：
 ```
