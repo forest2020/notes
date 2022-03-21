@@ -2551,6 +2551,7 @@ import glob
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
+from matplotlib import pyplot as plt
 
 
 class DiskImageDataset(Dataset):
@@ -2629,6 +2630,7 @@ class DiskImageDataset(Dataset):
 
         # 读取图片的路径和标签
         path, label = self.samples[idx]
+
         # 创建一个transform
         tf = transforms.Compose([
             lambda x:Image.open(x).convert('RGB'),  # 打开图片，转换成RGB格式
@@ -2648,6 +2650,9 @@ train_loader = DataLoader(dataset, batch_size=32, shuffle=True, drop_last=True)
 for batch_idx, data in enumerate(train_loader):
     print(
         f'batch_idex {batch_idx}, data X shape: {data[0].shape}, data Y shape: {data[1].shape}')
+    plt.figure()
+    plt.imshow(
+        ((data[0][0].detach().numpy()*255).astype(int)).transpose(1, 2, 0))
 ```
 输出：
 ```
