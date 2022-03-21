@@ -1705,6 +1705,8 @@ def main():
     model = Lenet5
     # model = ResNet18()
     print(model)
+    # 打印网络的参数量
+    print('parameters size: ',sum(map(lambda p:p.numel(), model.parameters())))
 
     # 定义损失函数，使用交叉熵
     criteria = nn.CrossEntropyLoss()
