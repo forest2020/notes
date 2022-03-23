@@ -2769,7 +2769,7 @@ model = nn.Sequential(*list(trained_model.children()[:-1]),
 
 # Auto-Encoder
 main.py
-```python```
+```python
 import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms, datasets
