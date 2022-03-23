@@ -45,6 +45,7 @@ PyTorch学习笔记
 * [数据集的加载](#数据集的加载)
 * [保存模型和早停](#保存模型和早停)
 * [迁移学习](#迁移学习)
+* [Auto-Encoder](#auto-encoder)
 
 
 
@@ -2766,8 +2767,146 @@ model = nn.Sequential(*list(trained_model.children()[:-1]),
 ```
 
 
+# Auto-Encoder
+main.py
+```python```
+import torch
+from torch.utils.data import DataLoader
+from torchvision import transforms, datasets
+from torch import nn, optim
+from ae import AE
+from visdom import Visdom
 
 
+def main():
+    # 加载手写数字mnist数据集，因为是一个图像重建编码-解码器
+    mnist_train = datasets.MNIST(r'd:\lesson07\mnist', train=True, transform=transforms.Compose([
+        transforms.ToTensor()
+    ]), download=True)
+    mnist_train = DataLoader(mnist_train, batch_size=32, shuffle=True)
+
+    mnist_test = datasets.MNIST(r'd:\lesson07\mnist', train=False, transform=transforms.Compose([
+        transforms.ToTensor()
+    ]), download=True)
+    mnist_test = DataLoader(mnist_test, batch_size=32)
+
+    # 显示数据集的形状
+    x, label = iter(mnist_train).next()
+    print(x.shape, label.shape)
+
+    # 模型
+    model = AE()
+    print(model)
+    # 损失函数
+    criteria = nn.MSELoss()
+    # 优化器
+    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+
+    # 可视化工具
+    viz = Visdom()
+
+    # 测试集迭代器
+    iter_mnist_test = iter(mnist_test)
+
+    # 开始训练
+    for epoch in range(1000):
+        # 训练一个epoch
+        for batch_idx, (x, _) in enumerate(mnist_train):
+            x_hat = model(x)
+            loss = criteria(x_hat, x)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+        print(f'epoch {epoch}, loss {loss.item()}')
+
+        # 显示测试集一个batch的生产图像效果
+        x, _ = iter_mnist_test.next()
+        with torch.no_grad():
+            x_hat = model(x)
+        viz.images(x, nrow=8, win='x', opts=dict(title='x'))
+        viz.images(x_hat, nrow=8, win='x_hat', opts=dict(title='x_hat'))
+
+
+if __name__ == '__main__':
+    main()
+```
+ae.py
+```python
+from torch import nn
+
+
+class AE(nn.Module):
+    def __init__(self):
+        super(AE, self).__init__()
+
+        # [b,784] => [b,20]
+        self.encoder = nn.Sequential(
+            nn.Linear(784, 256),
+            nn.ReLU(),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Linear(64, 20),
+            nn.ReLU()
+        )
+        # [b,20] => [b,784]
+        self.decoder = nn.Sequential(
+            nn.Linear(20, 64),
+            nn.ReLU(),
+            nn.Linear(64, 256),
+            nn.ReLU(),
+            nn.Linear(256, 784),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        batch_size = x.size(0)
+        # flatten
+        x = x.view(batch_size, 784)
+        # encoder
+        x = self.encoder(x)
+        # decoder
+        x = self.decoder(x)
+        # reshape
+        x = x.view(batch_size, 1, 28, 28)
+
+        return x
+
+
+def main():
+    pass
+
+
+if __name__ == '__main__':
+    main()
+```
+输出：
+```
+torch.Size([32, 1, 28, 28]) torch.Size([32])
+AE(
+  (encoder): Sequential(
+    (0): Linear(in_features=784, out_features=256, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=256, out_features=64, bias=True)
+    (3): ReLU()
+    (4): Linear(in_features=64, out_features=20, bias=True)
+    (5): ReLU()
+  )
+  (decoder): Sequential(
+    (0): Linear(in_features=20, out_features=64, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=64, out_features=256, bias=True)
+    (3): ReLU()
+    (4): Linear(in_features=256, out_features=784, bias=True)
+    (5): Sigmoid()
+  )
+)
+epoch 0, loss 0.022915519773960114
+epoch 1, loss 0.021418429911136627
+epoch 2, loss 0.01707749255001545
+```
+![alt auto encoder](./images/auto-encoder.png)
 
 
 
