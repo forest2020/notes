@@ -46,6 +46,7 @@ PyTorch学习笔记
 * [保存模型和早停](#保存模型和早停)
 * [迁移学习](#迁移学习)
 * [Auto-Encoder](#auto-encoder)
+* [gan](#gan)
 
 
 
@@ -2907,6 +2908,270 @@ epoch 1, loss 0.021418429911136627
 epoch 2, loss 0.01707749255001545
 ```
 ![alt auto encoder](./images/auto-encoder.png)
+
+# gan
+```python
+import torch
+from torch import nn, optim
+import numpy as np
+from visdom import Visdom
+import random
+from matplotlib import pyplot as plt
+
+
+# 学习一个二维分布
+
+h_dim = 400
+batch_size = 512
+viz = Visdom()
+
+
+class Generator(nn.Module):
+    """
+    创造者
+    """
+
+    def __init__(self):
+        super(Generator, self).__init__()
+
+        self.net = nn.Sequential(
+            nn.Linear(2, h_dim),
+            nn.ReLU(True),
+            nn.Linear(h_dim, h_dim),
+            nn.ReLU(True),
+            nn.Linear(h_dim, h_dim),
+            nn.ReLU(True),
+            nn.Linear(h_dim, 2)
+        )
+
+    def forward(self, z):
+        output = self.net(z)
+        return output
+
+
+class Discriminator(nn.Module):
+    """
+    鉴别者
+    """
+
+    def __init__(self):
+        super(Discriminator, self).__init__()
+
+        self.net = nn.Sequential(
+            nn.Linear(2, h_dim),
+            nn.ReLU(True),
+            nn.Linear(h_dim, h_dim),
+            nn.ReLU(True),
+            nn.Linear(h_dim, h_dim),
+            nn.ReLU(True),
+            nn.Linear(h_dim, 1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        output = self.net(x)
+        return output.view(-1)
+
+
+def data_generator():
+    """
+    数据生成器，8个二维正态分布的混合数据
+
+    Returns
+    -------
+    None.
+
+    """
+
+    # 二维正态分布的均值
+    scale = 2
+    centers = [
+        (1, 0),
+        (-1, 0),
+        (0, 1),
+        (0, -1),
+        (1./np.sqrt(2), 1./np.sqrt(2)),
+        (1./np.sqrt(2), -1./np.sqrt(2)),
+        (-1./np.sqrt(2), 1./np.sqrt(2)),
+        (-1./np.sqrt(2), -1./np.sqrt(2))
+    ]
+    centers = [(scale*x, scale*y) for x, y in centers]
+
+    while True:
+        dataset = []
+
+        # 生成一个batch的数据
+        for i in range(batch_size):
+            # 产生一个标准正态分布点
+            point = np.random.randn(2)*0.02
+            # 随机选取一个均值点
+            center = random.choice(centers)
+            # 将标准正态分布点转换为某个均值的正态分布
+            point += center
+            # 将点加入到数据集
+            dataset.append(point)
+
+        # 转换为numpy数组
+        dataset = np.array(dataset).astype(np.float32)
+        # 缩放
+        dataset /= 1.414
+
+        # 生成器
+        yield dataset
+
+
+def generate_image(D, G, xr, epoch):
+    """
+    Generates and saves a plot of the true distribution, the generator, and the
+    critic.
+    """
+    N_POINTS = 128
+    RANGE = 3
+    plt.clf()
+
+    points = np.zeros((N_POINTS, N_POINTS, 2), dtype='float32')
+    points[:, :, 0] = np.linspace(-RANGE, RANGE, N_POINTS)[:, None]
+    points[:, :, 1] = np.linspace(-RANGE, RANGE, N_POINTS)[None, :]
+    points = points.reshape((-1, 2))
+    # (16384, 2)
+    # print('p:', points.shape)
+
+    # draw contour
+    with torch.no_grad():
+        points = torch.Tensor(points)  # [16384, 2]
+        disc_map = D(points).cpu().numpy()  # [16384]
+    x = y = np.linspace(-RANGE, RANGE, N_POINTS)
+    cs = plt.contour(x, y, disc_map.reshape((len(x), len(y))).transpose())
+    plt.clabel(cs, inline=1, fontsize=10)
+    # plt.colorbar()
+
+    # draw samples
+    with torch.no_grad():
+        z = torch.randn(batch_size, 2)  # [b, 2]
+        samples = G(z).cpu().numpy()  # [b, 2]
+    plt.scatter(xr[:, 0], xr[:, 1], c='orange', marker='.')
+    plt.scatter(samples[:, 0], samples[:, 1], c='green', marker='+')
+
+    viz.matplot(plt, win='contour', opts=dict(title='p(x):%d' % epoch))
+
+
+def main():
+    # 设置随机种子
+    torch.manual_seed(23)
+    np.random.seed(23)
+
+    # 定义数据生成器
+    data_iter = data_generator()
+    x = next(data_iter)
+    # [b, 2]
+    print(x.shape)
+
+    # 实例化创造者和鉴别者
+    G = Generator()
+    D = Discriminator()
+    print(G)
+    print(D)
+
+    # 优化器
+    optim_G = optim.Adam(G.parameters(), lr=5e-4, betas=(0.5, 0.9))
+    optim_D = optim.Adam(D.parameters(), lr=5e-4, betas=(0.5, 0.9))
+
+    # 生成可视化曲线
+    viz.line([[0, 0]], [0], win='loss', opts=dict(
+        title='loss', legend=['D', 'G']))
+
+    for epoch in range(50000):
+        # 1. train Discriminator firstly
+        for _ in range(5):
+            # 1.1 train  on real data
+            xr = next(data_iter)
+            xr = torch.from_numpy(x)
+            # [b, 2] => [b, 1]
+            predr = D(xr)
+            # 最大化真实数据的误差
+            lossr = -predr.mean()
+
+            # 1.2 train on fake data
+            z = torch.randn(batch_size, 2)
+            xf = G(z).detach()  # detach后停止梯度传播， 现在是训练鉴别者，不调整创造者参数
+            predf = D(xf)
+            # 最小化假数据的误差
+            lossf = predf.mean()
+
+            # 总的loss，鉴别者输出的数值越大表示鉴定的结果越真实，反之越假
+            loss_D = lossr+lossf
+
+            # 优化
+            optim_D.zero_grad()
+            loss_D.backward()
+            optim_D.step()
+
+        # 2. trian Generator
+        z = torch.randn(batch_size, 2)
+        xf = G(z)
+        # 虽然不能都鉴别者更新梯度，但是它在计算图的后面，要更新创造者的梯度，
+        # 就需要D的梯度，所以不能detach，不用优化器更新就行了
+        predf = D(xf)
+        # 最大化假数据的误差，使创造者创造的数据更接近真实数据
+        loss_G = -predf.mean()
+
+        # 优化
+        optim_G.zero_grad()
+        loss_G.backward()
+        optim_G.step()
+
+        # 显示结果
+        if epoch % 100 == 0:
+            # 损失曲线
+            viz.line([[loss_D.item(), loss_G.item()]], [
+                epoch], win='loss', update='append')
+            print(f'loss_D: {loss_D.item()}, loss_G: {loss_G.item()}')
+
+            # 预测图像
+            generate_image(D, G, xr, epoch)
+
+
+if __name__ == '__main__':
+    main()
+```
+输出：
+```
+Setting up a new session...
+(512, 2)
+Generator(
+  (net): Sequential(
+    (0): Linear(in_features=2, out_features=400, bias=True)
+    (1): ReLU(inplace=True)
+    (2): Linear(in_features=400, out_features=400, bias=True)
+    (3): ReLU(inplace=True)
+    (4): Linear(in_features=400, out_features=400, bias=True)
+    (5): ReLU(inplace=True)
+    (6): Linear(in_features=400, out_features=2, bias=True)
+  )
+)
+Discriminator(
+  (net): Sequential(
+    (0): Linear(in_features=2, out_features=400, bias=True)
+    (1): ReLU(inplace=True)
+    (2): Linear(in_features=400, out_features=400, bias=True)
+    (3): ReLU(inplace=True)
+    (4): Linear(in_features=400, out_features=400, bias=True)
+    (5): ReLU(inplace=True)
+    (6): Linear(in_features=400, out_features=1, bias=True)
+    (7): Sigmoid()
+  )
+)
+loss_D: -0.1470015048980713, loss_G: -0.46947816014289856
+loss_D: 0.0, loss_G: -1.0
+loss_D: 0.0, loss_G: -1.0
+```
+图像：
+![alt gan loss](./images/gan_loss.png)    
+鉴别者D训练的很好，完美的将真假数据区分开来，误差是0。而创造者G的训练是失败的，loss始终是-1，原因是真假数据的分布没有重叠区域，由于gan训练的不稳定性，梯度一直无法更新。
+
+![alt gan_image](./images/gan_image.png)    
+黄色的点是8个真实的正态分布，绿色的点是采样出来的，可以看出与真实的分布没有重叠。
+
 
 
 
