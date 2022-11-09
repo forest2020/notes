@@ -58,10 +58,10 @@ PyTorch学习笔记
 5. 打开Anacoda命令提示符窗口，默认是base虚拟环境（可以创建新的，激活需要的环境），运行上一步复制的命令，完成PyTorch安装
 
 # IDE
-* Spyder，Anaconda自带的IDE，启动速度比较满，支持调试，智能提示不好用。
+* Spyder，Anaconda自带的IDE，启动速度比较慢，支持调试，智能提示不好用。
 * VSCode，速度快，智能提示好用。
 
-在Anaconda虚拟环境下使用VSCode方法：打开Anaconda命令提示符窗口，zixing```code.exe```启动VSCode，需要python插件，在插件的设置中指定Anacoda安装路径。
+在Anaconda虚拟环境下使用VSCode方法：打开Anaconda命令提示符窗口，执行```code.exe```启动VSCode，需要python插件，在插件的设置中指定Anacoda安装路径。
 
 
 
