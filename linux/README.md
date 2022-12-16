@@ -115,9 +115,14 @@ ifconfig <网卡名> | grep 'inet ' | awk '{print $2}'
 ```
 
 ## 主机间复制文件
-linux与linux、linux与windows之间复制文件：
+linux与linux、linux与windows之间复制文件。  
+从远程主机拷贝文件到本机：
 ```
 scp -r -p <用户>@<IP>:<源路径> <目标路径>
+```
+从本机拷贝文件到远程主机：
+```
+scp -r -p <源路径> <用户>@<IP>:<目标路径>
 ```
 | 参数 | 说明 |
 | ---- | ---- |
