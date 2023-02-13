@@ -9,4 +9,4 @@
 
 [Web开发](/web/README.md)
 
-[VS Code](/vscode/README.md)
+[VS Code](/VSCode/README.md)
