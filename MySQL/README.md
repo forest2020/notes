@@ -74,3 +74,8 @@ show create table table1;
 ```
 alter table table1 drop index UserName;
 ```
+删除数据库：
+```
+drop database mydb;
+```
+
