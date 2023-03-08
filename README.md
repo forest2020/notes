@@ -11,4 +11,6 @@
 
 [VS Code](/VSCode/README.md)
 
+[MySQL](/MySQL/README.md)
+
 [其它](others/README.md)
