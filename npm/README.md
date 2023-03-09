@@ -15,3 +15,7 @@ npm ls --include=dev
 ```
 npm ls -g
 ```
+查找包是否安装：
+```
+npm ls | grep 包含的关键字
+```
