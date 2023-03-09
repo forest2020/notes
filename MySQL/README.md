@@ -78,4 +78,32 @@ alter table table1 drop index UserName;
 ```
 drop database mydb;
 ```
+表添加字段：
+```
+alter table table1 add column Password varchar(64) not null comment '用户密码' after UserName;
+```
+存储过程中的变量声明，必须在开头的“begin”后面声明，前面不能有其它语句，不能再中间声明：
+```
+create procedure maintaindb()
+begin
+    declare UserID,RoleID int default 0;
+    select ID into UserID from User where UserName='admin';
+    select ID into RoleID from Role where RoleName='系统管理员';    
+end
+```
+在sql脚本中创建存储过程，需要先将语句分隔符从默认的“;”改为其它符号，创建结束后在改回来：
+```
+-- abc.sql
 
+-- 修改语句分隔符
+delimiter //
+
+create procedure maintaindb()
+begin
+  ...
+end //
+
+-- 恢复语句分隔符
+delimiter ;
+
+```
