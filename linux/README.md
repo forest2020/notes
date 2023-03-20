@@ -126,7 +126,7 @@ mdadm /dev/md/test --add /dev/sdb1
 # 重置损坏的磁盘分区表
 如果一个磁盘在磁盘管理工具中无法添加、删除分区，或者无法正确查看分区，那么需要重置磁盘的分布表，使用parted命令：   
 1、进入parted交互环境：```sudo parted /dev/<磁盘ID>```   
-2、重置分区表：```(parted)    mklabel   gpt```   
+2、重置分区表：```(parted)    mktable gpt```   
 3、在磁盘管理工具（界面工具，如Windows的“磁盘管理”、Ubuntu的“磁盘”）中创建新的分区。  
 
 **注意：重置分区表后磁盘上的数据全部丢失**
