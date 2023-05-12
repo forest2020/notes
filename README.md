@@ -15,6 +15,6 @@
 
 [npm](/npm/README.md)
 
-[使用nodejs+express+prisma+typescript搭建WebApi](nept/README.md)
+[使用 nodejs + express + prisma + typescript 开发 WebApi 服务](nept/README.md)
 
 [其它](others/README.md)
