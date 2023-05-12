@@ -312,3 +312,23 @@ app.listen(port, () => {
 ```
 Express + TypeScript Server. Users: [用户1]
 ```
+## 13、使用 VS Code 调试ts代码
+### 13.1、配置 ts 和 js 代码之间的映射
+打开 tsconfig.json 文件，打开 ts 与 js 代码之间的映射选项 sourceMap，修改后的文件内容是：
+```
+{
+  "compilerOptions": {
+     "target": "es2016",
+     "module": "commonjs",
+     "sourceMap": true,
+     "outDir": "./dist",
+     "esModuleInterop": true,
+     "forceConsistentCasingInFileNames": true,
+     "strict": true,
+     "skipLibCheck": true
+  }
+}
+```
+### 13.2、启动调试
+在 VS Code 中打开 myapp 文件夹，打开 package.json文件，点击 "scripts"行上面的 Debug，选择 dev。     
+在 ts 文件增加断点，调试。
