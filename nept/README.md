@@ -40,7 +40,7 @@ npm i -D typescript @types/express @types/node
 安装成功后，package.json 文件中增加了 "devDependencies" 部分，如下：
 ```
 {
-  "name": "yjaigcapi",
+  "name": "myapi",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -159,6 +159,7 @@ PORT=8000
 ```
 npm run build
 ```
+只需要在项目第一次运行前编译一次，否则第一次运行 dev 命令会有一个异常。
 ### 7.3、以开发模式启动程序
 ```
 npm run dev
@@ -280,7 +281,7 @@ npx prisma migrate dev --name init
 ```
 查看 mysql 的 mydb 数据库，应该有 user、role、group、usergroup和userrole表。
 ## 12、测试 prisma 
-在 user 表中增加一条记录。    
+手工在 user 表中增加一条记录。    
 打开 index.ts，增加查询数据库代码，增加好的代码如下：
 ```
 import express, { Express, Request, Response } from 'express';
