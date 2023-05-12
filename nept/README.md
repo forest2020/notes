@@ -168,3 +168,147 @@ npm run dev
 ```
 Express + TypeScript Server
 ```
+## 8、初始化 prisma ORM
+```
+npx prisma init
+```
+成功后，在 myapi 文件夹下新产生了 prisma 文件夹，并且 .evn文件中增加了 DATABASE_URL 项目，内容如下：
+```
+# express web service port
+PORT=8000
+
+# This was inserted by `prisma init`:
+# Environment variables declared in this file are automatically made available to Prisma.
+# See the documentation for more detail: https://pris.ly/d/prisma-schema#accessing-environment-variables-from-the-schema
+
+# Prisma supports the native connection string format for PostgreSQL, MySQL, SQLite, SQL Server, MongoDB and CockroachDB.
+# See the documentation for all the connection string options: https://pris.ly/d/connection-strings
+
+DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public"
+```
+## 9、配置 prisma
+我们这里使用mysql数据库，打开 prisma/schema.prisma，将数据库修改为 mysql，修改后内容如下：
+```
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+```
+打开 .env 文件，配置 mysql 连接字符串，修改后的内容如下：
+```
+# express web service port
+PORT=8000
+
+# This was inserted by `prisma init`:
+# Environment variables declared in this file are automatically made available to Prisma.
+# See the documentation for more detail: https://pris.ly/d/prisma-schema#accessing-environment-variables-from-the-schema
+
+# Prisma supports the native connection string format for PostgreSQL, MySQL, SQLite, SQL Server, MongoDB and CockroachDB.
+# See the documentation for all the connection string options: https://pris.ly/d/connection-strings
+
+DATABASE_URL="mysql://root:123456@localhost:3306/mydb"
+```
+## 10、编写数据库脚本
+打开 prisma/schema.prisma，在最下面增加数据库脚本，增加后的内容如下：
+```
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String?
+  users         UserRole[]
+}
+
+model Group {
+  id     Int     @id @default(autoincrement())
+  name          String
+  description   String?
+  groups        UserGroup[]
+}
+
+model UserRole {
+  user       User   @relation(fields: [userId], references: [id])
+  userId     Int
+  Role       Role   @relation(fields: [roleId], references: [id])
+  roleId     Int
+
+  @@id([userId, roleId])
+}
+
+model UserGroup {
+  user       User   @relation(fields: [userId], references: [id])
+  userId     Int
+  group      Group   @relation(fields: [groupId], references: [id])
+  groupId    Int
+
+  @@id([userId, groupId])
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  account    String   @unique
+  password   String?
+  name       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  roles      UserRole[]
+  groups     UserGroup[]
+}
+```
+## 11、创建数据库
+```
+npx prisma migrate dev --name init
+```
+查看 mysql 的 mydb 数据库，应该有 user、role、group、usergroup和userrole表。
+## 12、测试 prisma 
+在 user 表中增加一条记录。    
+打开 index.ts，增加查询数据库代码，增加好的代码如下：
+```
+import express, { Express, Request, Response } from 'express';
+import dotenv from 'dotenv';
+import { PrismaClient, User } from '@prisma/client'
+
+dotenv.config();
+
+const app: Express = express();
+const port = process.env.PORT;
+
+const prisma = new PrismaClient()
+
+app.get('/', async (req: Request, res: Response) => {
+    let allUsers: User[] = [];
+    let err = '';
+    await prisma.user.findMany({ include: { roles: true, groups: true } })
+        .then((users) => allUsers = users)
+        .catch((e) => err = e)
+        .finally(async () => await prisma.$disconnect());
+    res.send(`Express + TypeScript Server. Users: [${allUsers.map((user) => user.name)}]`);
+});
+
+app.listen(port, () => {
+    console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
+});
+```
+打开浏览器，访问 http://localhost:8000/，显示如下内容：
+```
+Express + TypeScript Server. Users: [用户1]
+```
