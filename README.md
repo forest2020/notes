@@ -17,4 +17,6 @@
 
 [使用 nodejs + express + prisma + typescript 开发 WebApi 服务](nept/README.md)
 
+[Ubuntu 下使用 openssl 生产证书](/opensslcert/README.md)
+
 [其它](others/README.md)
