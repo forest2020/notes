@@ -1,6 +1,5 @@
 # notes 我的笔记
 记录日常的点点滴滴
-1234567890
 
 [PyTorch](/PyTorch/README.md)
 
