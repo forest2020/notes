@@ -88,7 +88,11 @@ Common\ffmpeg
 ipch
 
 ```
-## 获取项目加入git的文件大小
+## 列表untracked文件
 ```
-for f in `git status --porcelain | sed 's#^...##'`; do du -cs $f | head -n 1; done | sort -nr;  echo "TOTAL:"; du -cs .
+git ls-files --others --exclude-standard
+```
+## 列表忽略的文件
+```
+git status --ignored
 ```
