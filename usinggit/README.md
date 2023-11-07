@@ -96,3 +96,7 @@ git ls-files --others --exclude-standard
 ```
 git status --ignored
 ```
+## 获取git中项目的大小
+```
+git count-objects -H
+```
