@@ -1,3 +1,5 @@
+# 基本使用流程
+
 1. 本地电脑安装git，配置git  
 ```
 git config --global user.name "John Doe"   
@@ -31,3 +33,62 @@ git branch iss53
 ```
 
 8. 本地提交后，如果不需要合并到主分支，只想把新分支推到GitHub上 git push origin iss53  
+
+# 实用命令
+## 排除不需要加入git的文件
+在项目根目录下增加“.gitignore”文件，每行输入一种需要忽略的内容，类似下面这样：
+```
+# root files
+Backup.bat
+CopyToSetup.bat
+ExcludeList.txt
+UpdateFile.exe
+UpgradeLog.htm
+版本说明.txt
+版本说明.txt
+更新外部库.exe
+配置说明.txt
+外部库列表.txt
+
+
+# file types
+*.scc
+*.ncb
+*.sdf
+*.vssscc
+*.rar
+*.zip
+*.obj
+*.ilk
+*.pch
+*.pdb
+*.idb
+*.exp
+*.mpg
+*.mp3
+*.wma
+*.wmv
+*.mdc
+*.avi
+*.dat
+*.res
+*.aps
+*.dcm
+*.sbr
+
+# directories
+AnyData
+obj
+Debug
+Release
+App/Dll
+App/Exe
+Backup
+Common\ffmpeg
+ipch
+
+```
+## 获取项目加入git的文件大小
+```
+for f in `git status --porcelain | sed 's#^...##'`; do du -cs $f | head -n 1; done | sort -nr;  echo "TOTAL:"; du -cs .
+```
