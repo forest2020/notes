@@ -138,7 +138,7 @@ False
 ```
 使用```x = x.cuda()```将CPU中的Tensor转入GPU中，前期需要安装支持CUDA的PyTorch。
 
-1度向量的创建：
+1维向量的创建：
 ```python
 import torch
 
