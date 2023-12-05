@@ -64,7 +64,21 @@ PyTorch学习笔记
 在Anaconda虚拟环境下使用VSCode方法：1、配置vscode：打开vscode的“设置--扩展”，定位到“Python”扩展，“Conda Path”属性设置为Anaconda的安装根路径；2、打开Anaconda命令提示符窗口，执行```code.exe```启动VSCode，在右下角选择需要的conda环境，然后就可以编写代码和调试了。   
 python3提供了venv虚拟环境，在VSCode中使用方法参考[VSCode官网](https://code.visualstudio.com/docs/python/environments)
 
+# 验证PyTorch安装
+在IDE中新建一个python文件，内容如下：
+```python
+import torch
 
+print(torch.__version__)
+print('GPU: %s' % (torch.cuda.is_available()))
+```
+如果PyTorch正确安装，应该输出：
+```
+2.1.1+cu121
+GPU: True
+```
+第一行是已安装PyTorch的版本和PyTorch中使用的CUAD的版本。   
+第二行是是否支持GPU，根据电脑的情况，有显卡输出True，没有显卡输出False。  
 
 # PyTorch数据类型
 ## 数据类型说明
