@@ -51,17 +51,18 @@ PyTorch学习笔记
 
 
 # 安装
-1. 安装Anaconda
+1. 安装Anaconda或者使用python3自带的venv
 2. 打开PyTorch[官网](https://pytorch.org/)
 3. 进入Pytorch安装页面，可能是[这个](https://pytorch.org/get-started/locally/)
 4. 在“START LOCALLY”标签页里面，根据自己电脑的操作系统和GPU情况，选择好安装条件，复制“Run this Command:”后面的内容
-5. 打开Anacoda命令提示符窗口，默认是base虚拟环境（可以创建新的，激活需要的环境），运行上一步复制的命令，完成PyTorch安装
+5. 打开Anacoda命令提示符窗口，默认是base虚拟环境（可以创建新的，激活需要的环境）或者创建一个新的venv环境，运行上一步复制的命令，完成PyTorch安装
 
 # IDE
 * Spyder，Anaconda自带的IDE，启动速度比较慢，支持调试，智能提示不好用。
 * VSCode，速度快，智能提示好用。
 
-在Anaconda虚拟环境下使用VSCode方法：1、配置vscode：打开vscode的“设置--扩展”，定位到“Python”扩展，“Conda Path”属性设置为Anaconda的安装根路径；2、打开Anaconda命令提示符窗口，执行```code.exe```启动VSCode，在右下角选择需要的conda环境，然后就可以编写代码和调试了。
+在Anaconda虚拟环境下使用VSCode方法：1、配置vscode：打开vscode的“设置--扩展”，定位到“Python”扩展，“Conda Path”属性设置为Anaconda的安装根路径；2、打开Anaconda命令提示符窗口，执行```code.exe```启动VSCode，在右下角选择需要的conda环境，然后就可以编写代码和调试了。   
+python3提供了venv虚拟环境，在VSCode中使用方法参考[VSCode官网](https://code.visualstudio.com/docs/python/environments)
 
 
 
