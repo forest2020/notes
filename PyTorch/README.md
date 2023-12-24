@@ -2712,7 +2712,7 @@ train_loader = DataLoader(dataset, batch_size=32, shuffle=True, drop_last=True)
 # 可视化客户端
 viz = Visdom()
 
-# 训练网络
+# 验证加载器
 for batch_idx, data in enumerate(train_loader):
     print(
         f'batch_idex {batch_idx}, data X shape: {data[0].shape}, data Y shape: {data[1].shape}')
@@ -2722,6 +2722,7 @@ for batch_idx, data in enumerate(train_loader):
     plt.figure()
     plt.imshow(
         ((dataset.denormalize(data[0][0].detach()).numpy()*255).astype(int)).transpose(1, 2, 0))
+    plt.show()
     # 第二种方法，使用Visdom服务，显示一个batch的图片和标签，充分验证数据的正确性
     viz.images(dataset.denormalize(
         data[0]), nrow=8, win='batch', opts={'title': 'batch'})
