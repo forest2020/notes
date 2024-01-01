@@ -264,7 +264,7 @@ k: tensor([9, 3, 4, 7, 0, 6, 5, 2, 1, 8])
 ```python
 import torch
 
-# 创建一个4维向量，一般是图像识别网络的输入（batch_size, channel, width, height)
+# 创建一个4维向量，一般是图像识别网络的输入（batch_size, channel, height, width)
 a = torch.rand(4, 3, 28, 28)
 
 # 维度的索引从0开始，小于维度的数目，从左面开始
