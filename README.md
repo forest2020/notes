@@ -1,5 +1,4 @@
 # notes
-logs
 
 [PyTorch](/PyTorch/README.md)
 
